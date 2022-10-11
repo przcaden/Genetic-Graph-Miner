@@ -19,7 +19,6 @@ while not num_connected_nodes.isnumeric():
 print('Which nodes would you like to connect (0-18)?')
 connecting_nodes = [None] * int(num_connected_nodes)
 for i in range(int(num_connected_nodes)):
-    print(i)
     connecting_nodes[i] = 'x'
     while not connecting_nodes[i].isnumeric() or int(connecting_nodes[i])>18 or int(connecting_nodes[i])<0:
         connecting_nodes[i] = str(input())
