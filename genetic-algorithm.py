@@ -8,6 +8,20 @@
 ############################################################################################
 
 
+#           Genetic algorithm pseudocode
+# begin 
+#     generation = 0 
+#     while ( best_fitness != 0 ): 
+#         selection(population) 
+#         crossover(population) 
+#         mutation(population) 
+#         if ( Best(population) < best_fitness ): 
+#             then best_fitness = Best(population) 
+#         generation += 1 
+#     end while 
+#     return best_fitness 
+# end 
+
 import igraph as ig
 import matplotlib.pyplot as plt
 
@@ -26,9 +40,20 @@ def main():
 
     # Initialize graph
     node_names = []
+    highlighted_nodes = []
+    path_traversed = []
     network_data = [[]]
     for i in range(18):
+        # Append a value for the node
         node_names.append(str(i))
+        # Initialize path highlighting (False = not traversed yet)
+        path_traversed.append(False)
+        # Determine if node is part of the connected subgraph and highlight it if so
+        for j in connecting_nodes:
+            if int(j) == i: highlighted_nodes.append(True)
+            else: highlighted_nodes.append(False)
+    
+    # Get graph path data
     file = open("node_data.txt", "r")
     for l in file:
         if l[0] != '/' and l[0] != '\n':
