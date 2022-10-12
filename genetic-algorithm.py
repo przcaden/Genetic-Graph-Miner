@@ -11,6 +11,66 @@
 import igraph as ig
 import matplotlib.pyplot as plt
 
+#           Genetic algorithm pseudocode
+# begin 
+#     generation = 0 
+#     while ( best_fitness != 0 ): 
+#         selection(population) 
+#         crossover(population) 
+#         mutation(population) 
+#         if ( Best(population) < best_fitness ): 
+#             then best_fitness = Best(population) 
+#         generation += 1 
+#     end while 
+#     return best_fitness 
+# end 
+
+
+
+
+#           Selection function pseudocode
+#       Inputs: 
+#       Returns: 
+# begin
+#     for each f in fitnesses:
+#         for each parent of node:
+#             select 2 parents with highest fitnesses?
+
+
+
+
+#           Fitness-determining function pseudocode
+# every time one of the target nodes appears in a state, increment fitness by 1
+#       Inputs: list of traversed edges (a state)
+#       Returns: an integer (rating of fitness).
+# begin
+#     fitness = 0
+#     for each edge=True in state:
+#         if edge is connected to a highlighted node:
+#             fitness += 1
+#         if edge connects two highlighted nodes:
+#             fitness += 2
+#     return fitness
+
+def determineStateFitness(state, n_data, h_nodes):
+    fitness = 0
+    for i in range(state):
+        # If edge is highlighted (traversed), calculate fitness
+        if state[i] == True:
+            fitness += edgeFitness(n_data[i], h_nodes)
+    return fitness
+
+def edgeFitness(connection, h_nodes):
+    fitness = 0
+    # Check if edge connects highlighted node(s).
+    # For each highlighted node connected, fitness increases by 1
+    if connection[0] in h_nodes:
+        fitness += 1
+    if connection[1] in h_nodes:
+        fitness += 1
+    return fitness
+
+
 def main():
     # Get user inputted values for connected nodes:
     print('How many nodes would you like to connect?')
@@ -26,9 +86,20 @@ def main():
 
     # Initialize graph
     node_names = []
+    highlighted_nodes = []
+    path_traversed = []
     network_data = [[]]
     for i in range(18):
+        # Append a value for the node
         node_names.append(str(i))
+        # Initialize path highlighting (False = not traversed yet)
+        path_traversed.append(False)
+        # Determine if node is part of the connected subgraph and highlight it if so
+        for j in connecting_nodes:
+            if int(j) == i: highlighted_nodes.append(True)
+            else: highlighted_nodes.append(False)
+    
+    # Get graph path data
     file = open("node_data.txt", "r")
     for l in file:
         if l[0] != '/' and l[0] != '\n':
@@ -37,6 +108,7 @@ def main():
     n_vertices = 19
     g = ig.Graph(n_vertices, network_data)
     print(network_data)
+    print(highlighted_nodes)
 
     # Set graph characteristics
     g["title"] = "Genetic Network"
