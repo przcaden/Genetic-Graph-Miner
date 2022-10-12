@@ -8,6 +8,9 @@
 ############################################################################################
 
 
+import igraph as ig
+import matplotlib.pyplot as plt
+
 #           Genetic algorithm pseudocode
 # begin 
 #     generation = 0 
@@ -22,8 +25,51 @@
 #     return best_fitness 
 # end 
 
-import igraph as ig
-import matplotlib.pyplot as plt
+
+
+
+#           Selection function pseudocode
+#       Inputs: 
+#       Returns: 
+# begin
+#     for each f in fitnesses:
+#         for each parent of node:
+#             select 2 parents with highest fitnesses?
+
+
+
+
+#           Fitness-determining function pseudocode
+# every time one of the target nodes appears in a state, increment fitness by 1
+#       Inputs: list of traversed edges (a state)
+#       Returns: an integer (rating of fitness).
+# begin
+#     fitness = 0
+#     for each edge=True in state:
+#         if edge is connected to a highlighted node:
+#             fitness += 1
+#         if edge connects two highlighted nodes:
+#             fitness += 2
+#     return fitness
+
+def determineStateFitness(state, n_data, h_nodes):
+    fitness = 0
+    for i in range(state):
+        # If edge is highlighted (traversed), calculate fitness
+        if state[i] == True:
+            fitness += edgeFitness(n_data[i], h_nodes)
+    return fitness
+
+def edgeFitness(connection, h_nodes):
+    fitness = 0
+    # Check if edge connects highlighted node(s).
+    # For each highlighted node connected, fitness increases by 1
+    if connection[0] in h_nodes:
+        fitness += 1
+    if connection[1] in h_nodes:
+        fitness += 1
+    return fitness
+
 
 def main():
     # Get user inputted values for connected nodes:
@@ -62,6 +108,7 @@ def main():
     n_vertices = 19
     g = ig.Graph(n_vertices, network_data)
     print(network_data)
+    print(highlighted_nodes)
 
     # Set graph characteristics
     g["title"] = "Genetic Network"
