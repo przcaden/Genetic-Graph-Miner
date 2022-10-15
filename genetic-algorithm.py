@@ -11,6 +11,7 @@
 import igraph as ig
 import matplotlib.pyplot as plt
 import random
+import queue
 
 # Define algorithm constants
 NUM_RANDOM_EDGES = 8
@@ -24,14 +25,64 @@ NUM_EDGES = 37
 # Pre: generation has been initialized with traversed edges.
 #      all node connection data has been created and user has selected nodes.
 # Post: fitness of the given state has been calculated.
+
+
+#function to determine the distance between two nodes, ie the number of edges between nodes
+# Get respective network data for all edges within a given population.
+def getPopulationData(population, n_data):
+    pop_data = []
+    for i in range(len(population)):
+        if population[i]:
+            pop_data.append(n_data[i])
+    return pop_data
+
+
+# function to add edges to an adjacency list
+def addEdges(edges, x, y):
+    edges[x].append(y)
+    edges[y].append(x)
+
+ #function for finding minimum number of edges between any two nodes in the graph
+
+def minimumEdgesBFS(edges, u, v):
+     
+    # visited[n] for keeping track
+    # of visited node in BFS
+    visited = [0] * NUM_NODES
+ 
+    # Initialize distances as 0
+    distance = [0] * NUM_NODES
+ 
+    # queue to do BFS.
+    Q = queue.Queue()
+    distance[u] = 0
+ 
+    Q.put(u)
+    visited[u] = True
+    while (not Q.empty()):
+        x = Q.get()
+         
+        for i in range(len(edges[x])):
+            if (visited[edges[x][i]]):
+                continue
+ 
+            # update distance for i
+            distance[edges[x][i]] = distance[x] + 1
+            Q.put(edges[x][i])
+            visited[edges[x][i]] = 1
+    return distance[v]
+ 
+
 def determineStateFitness(state, n_data, h_nodes):
-    fitness = 0
+    #do we need this function? 
+    # what if we make it return a list of the fitness of the connected edges in these generation?
+    fitnesses = []
     # If edge is highlighted (traversed), calculate fitness.
     # Fitness increases by 1 for each highlighted node connected by the edge.
-    for i in range(state):
+    for i in range(len(state)):
         if state[i] == True:
-            fitness += edgeFitness(n_data[i], h_nodes)
-    return fitness
+            fitnesses.append(edgeFitness(n_data[i], h_nodes))
+    return fitnesses
 
 
 # Determines the fitness of a specific edge.
@@ -59,6 +110,7 @@ def random_population():
             rand_edge = random.randint(0,NUM_EDGES-1)
         generated_edges.append(rand_edge)
         new_path[rand_edge] = True
+    print("this is the initial population", new_path)
     return new_path
 
 
@@ -66,10 +118,7 @@ def random_population():
 # Pre: a population has already been populated, along with a set of conencted edges.
 # Post: determine a set containing a probability of selection for each edge in the given population.
 def get_probabilities(population, n_data, h_nodes):
-    fitnesses = []
-    for i in range(NUM_EDGES):
-        if population[i]:
-            fitnesses.append(edgeFitness(n_data[i], h_nodes))
+    fitnesses = determineStateFitness(population, n_data, h_nodes)
     total_fitness = sum(fitnesses)
     relative_fitnesses = [f/total_fitness for f in fitnesses]
     probabilities = [sum(relative_fitnesses[:i+1]) for i in range(len(relative_fitnesses))]
@@ -181,6 +230,17 @@ def main():
     # Generate initial population
     # g.es["edges"] = random_population()
 
+    
+    #TESTING FOR WHETHER THE BFS ALGORITHM CAN FIND THE SHORTEST DISTANCE GIVEN TWO NDOES
+    #test the number of edges between two nodes
+    # first get adjacency list of graph using network data
+    edges_adjacency_list = [[] for i in range(19)]
+    for a, b in network_data:
+        addEdges(edges_adjacency_list, a, b)
+    
+    print ("this is the adjacency list of the graph", edges_adjacency_list)
+    print(" shortest distance between nodes 4 and 8 is:" , minimumEdgesBFS(edges_adjacency_list, 4, 8), "edges aways")
+   
     # Begin genetic algorithm
     populations = [base_population]
     for current_generation_index in range(NUM_GENERATIONS):
