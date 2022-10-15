@@ -33,6 +33,7 @@ def determineStateFitness(state, n_data, h_nodes):
             fitness += edgeFitness(n_data[i], h_nodes)
     return fitness
 
+
 # Determines the fitness of a specific edge.
 # Pre: generation has been initialized with traversed edges and user has selected nodes.
 # Post: fitness of the given edge has been calculated.
@@ -47,6 +48,8 @@ def edgeFitness(connection, h_nodes):
     return fitness
 
 # Randomly generate a set of edges, which will be the initial population.
+# Pre: none
+# Post: a random set of [NUM_EDGES] edges are selected to be part of a poulation.
 def random_population():
     new_path = [False] * NUM_EDGES
     generated_edges = []
@@ -58,7 +61,10 @@ def random_population():
         new_path[rand_edge] = True
     return new_path
 
+
 # Generate a probability for each edge in a population to be selected
+# Pre: a population has already been populated, along with a set of conencted edges.
+# Post: determine a set containing a probability of selection for each edge in the given population.
 def get_probabilities(population, n_data, h_nodes):
     fitnesses = []
     for i in range(NUM_EDGES):
@@ -72,15 +78,18 @@ def get_probabilities(population, n_data, h_nodes):
     print('Edge probabilities: ', probabilities)
     return probabilities
 
+
 # Select two parents for crossover based on generated probabilities
-def selection(population, probabilities):
+# Pre: a set of probabilities has been generated for the given population
+# Post: two edges are chosen for crossover in the next population
+def selection(population, probabilities, n_data):
     chosen_edges = []
     for i in range(2):
         r = random.random()
         for (i, edge) in enumerate(population):
             print('i: ',i,' edge: ', edge)
-            if r <= probabilities[i]:
-                chosen_edges.append(edge)
+            if r <= probabilities[i] and population[i]:
+                chosen_edges.append(n_data[i])
                 break
     return chosen_edges
 
