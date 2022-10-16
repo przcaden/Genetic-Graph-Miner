@@ -73,28 +73,27 @@ def minimumEdgesBFS(edges, u, v):
     return distance[v]
  
 
-def determineStateFitness(state, n_data, h_nodes):
+def determineStateFitness(pop_data, h_nodes):
     #do we need this function? 
     # what if we make it return a list of the fitness of the connected edges in these generation?
     fitnesses = []
     # If edge is highlighted (traversed), calculate fitness.
     # Fitness increases by 1 for each highlighted node connected by the edge.
-    for i in range(len(state)):
-        if state[i] == True:
-            fitnesses.append(edgeFitness(n_data[i], h_nodes))
+    for edge in pop_data:
+        fitnesses.append(edgeFitness(edge, h_nodes))
     return fitnesses
 
 
 # Determines the fitness of a specific edge.
 # Pre: generation has been initialized with traversed edges and user has selected nodes.
 # Post: fitness of the given edge has been calculated.
-def edgeFitness(connection, h_nodes):
+def edgeFitness(edge, h_nodes):
     fitness = 0
     # Check if edge connects highlighted node(s).
     # For each highlighted node connected, fitness increases by 1
-    if connection[0] in h_nodes:
+    if edge[0] in h_nodes:
         fitness += 1
-    if connection[1] in h_nodes:
+    if edge[1] in h_nodes:
         fitness += 1
     return fitness
 
@@ -117,8 +116,8 @@ def random_population():
 # Generate a probability for each edge in a population to be selected
 # Pre: a population has already been populated, along with a set of conencted edges.
 # Post: determine a set containing a probability of selection for each edge in the given population.
-def get_probabilities(population, n_data, h_nodes):
-    fitnesses = determineStateFitness(population, n_data, h_nodes)
+def get_probabilities(pop_data, h_nodes):
+    fitnesses = determineStateFitness(pop_data, h_nodes)
     total_fitness = sum(fitnesses)
     relative_fitnesses = [f/total_fitness for f in fitnesses]
     probabilities = [sum(relative_fitnesses[:i+1]) for i in range(len(relative_fitnesses))]
@@ -140,15 +139,17 @@ def getPopulationData(population, n_data):
 # Post: two edges are chosen for crossover in the next population
 def selection(pop_data, probabilities, n_data):
     chosen_edges = random.choices(pop_data, cum_weight=probabilities, k=2)
-
-    # for i in range(2):
-    #     r = random.random()
-    #     for (i, edge) in enumerate(population):
-    #         print('i: ',i,' edge: ', edge)
-    #         if r <= probabilities[i] and population[i]:
-    #             chosen_edges.append(n_data[i])
-    #             break
     return chosen_edges
+
+
+# Choose respective traits from parents and derive offspring.
+# Pre: selection has been performed and two parents were selected.
+# Post: two offspring are created based off the traits of parents.
+def parent_mating(parents):
+    # this is a very basic start to a crossover function, we will likely have to change this later
+    offspring1 = (parents[0][0], parents[1][1])
+    offspring2 = (parents[0][1], parents[1][0])
+    return offspring1, offspring2
 
 
 # Determine if a given population is complete.
@@ -168,7 +169,6 @@ def isComplete(pop_data, c_nodes):
                 if pop_data[i][0] in edge:
                     nodes_traversed.append(pop_data[i][1])
                     break
-
     # Determine if every node was hit
     return len(nodes_traversed) == len(c_nodes) and sorted(nodes_traversed) == sorted(c_nodes)
 
@@ -192,11 +192,6 @@ def main():
     base_population = [False]*NUM_EDGES # highlighted edges (bool)
     network_data = [[]] # data of all
 
-    base_population[17] = True
-    base_population[16] = True
-    base_population[13] = True
-    base_population[4] = True
-
     # Create node properties
     for i in range(NUM_NODES):
         # Append a value for the node
@@ -205,12 +200,6 @@ def main():
         if i in connecting_nodes:
             highlighted_nodes.append(True)
         else: highlighted_nodes.append(False)
-
-    highlighted_nodes = [False] * NUM_NODES
-    highlighted_nodes[3] = True
-    highlighted_nodes[1] = True
-    highlighted_nodes[13] = True
-    connecting_nodes = (1,3,13)
 
     # Get graph path data
     file = open("node_data.txt", "r")
@@ -228,7 +217,8 @@ def main():
     g.es["population"] = base_population
 
     # Generate initial population
-    # g.es["edges"] = random_population()
+    population = random_population()
+    g.es["population"] = population
 
     
     #TESTING FOR WHETHER THE BFS ALGORITHM CAN FIND THE SHORTEST DISTANCE GIVEN TWO NDOES
@@ -242,7 +232,6 @@ def main():
     print(" shortest distance between nodes 4 and 8 is:" , minimumEdgesBFS(edges_adjacency_list, 4, 8), "edges aways")
    
     # Begin genetic algorithm
-    populations = [base_population]
     for current_generation_index in range(NUM_GENERATIONS):
 
         # Plot graph in matplotlib
@@ -261,12 +250,16 @@ def main():
         )
         plt.show()
 
-        # Perform selection
-        # population_probabilities = get_probabilities(g.es["edges"], network_data, highlighted_nodes)
-        # parents = selection(g.es["edges"], population_probabilities, network_data)
-        # print(parents)
+        pop_data = getPopulationData(population, network_data)
 
-        pop_data = getPopulationData(g.es["population"], network_data)
+        # Perform selection, crossover, mutation
+        population_probabilities = get_probabilities(pop_data, highlighted_nodes)
+        parents = selection(pop_data, population_probabilities, network_data)
+        offspring1, offspring2 = parent_mating(parents)
+        population.append(offspring1, offspring2)
+        g.es["population"] = population
+        print(parents)
+
         print(isComplete(pop_data, connecting_nodes))
 
         # Step up to next generation (temporary)
