@@ -73,28 +73,27 @@ def minimumEdgesBFS(edges, u, v):
     return distance[v]
  
 
-def determineStateFitness(state, n_data, h_nodes):
+def determineStateFitness(pop_data, h_nodes):
     #do we need this function? 
     # what if we make it return a list of the fitness of the connected edges in these generation?
     fitnesses = []
     # If edge is highlighted (traversed), calculate fitness.
     # Fitness increases by 1 for each highlighted node connected by the edge.
-    for i in range(len(state)):
-        if state[i] == True:
-            fitnesses.append(edgeFitness(n_data[i], h_nodes))
+    for edge in pop_data:
+        fitnesses.append(edgeFitness(edge, h_nodes))
     return fitnesses
 
 
 # Determines the fitness of a specific edge.
 # Pre: generation has been initialized with traversed edges and user has selected nodes.
 # Post: fitness of the given edge has been calculated.
-def edgeFitness(connection, h_nodes):
+def edgeFitness(edge, h_nodes):
     fitness = 0
     # Check if edge connects highlighted node(s).
     # For each highlighted node connected, fitness increases by 1
-    if connection[0] in h_nodes:
+    if edge[0] in h_nodes:
         fitness += 1
-    if connection[1] in h_nodes:
+    if edge[1] in h_nodes:
         fitness += 1
     return fitness
 
@@ -117,8 +116,8 @@ def random_population():
 # Generate a probability for each edge in a population to be selected
 # Pre: a population has already been populated, along with a set of conencted edges.
 # Post: determine a set containing a probability of selection for each edge in the given population.
-def get_probabilities(population, n_data, h_nodes):
-    fitnesses = determineStateFitness(population, n_data, h_nodes)
+def get_probabilities(pop_data, h_nodes):
+    fitnesses = determineStateFitness(pop_data, h_nodes)
     total_fitness = sum(fitnesses)
     relative_fitnesses = [f/total_fitness for f in fitnesses]
     probabilities = [sum(relative_fitnesses[:i+1]) for i in range(len(relative_fitnesses))]
@@ -192,11 +191,6 @@ def main():
     base_population = [False]*NUM_EDGES # highlighted edges (bool)
     network_data = [[]] # data of all
 
-    base_population[17] = True
-    base_population[16] = True
-    base_population[13] = True
-    base_population[4] = True
-
     # Create node properties
     for i in range(NUM_NODES):
         # Append a value for the node
@@ -205,12 +199,6 @@ def main():
         if i in connecting_nodes:
             highlighted_nodes.append(True)
         else: highlighted_nodes.append(False)
-
-    highlighted_nodes = [False] * NUM_NODES
-    highlighted_nodes[3] = True
-    highlighted_nodes[1] = True
-    highlighted_nodes[13] = True
-    connecting_nodes = (1,3,13)
 
     # Get graph path data
     file = open("node_data.txt", "r")
@@ -228,7 +216,7 @@ def main():
     g.es["population"] = base_population
 
     # Generate initial population
-    # g.es["edges"] = random_population()
+    g.es["population"] = random_population()
 
     
     #TESTING FOR WHETHER THE BFS ALGORITHM CAN FIND THE SHORTEST DISTANCE GIVEN TWO NDOES
@@ -261,12 +249,13 @@ def main():
         )
         plt.show()
 
-        # Perform selection
-        # population_probabilities = get_probabilities(g.es["edges"], network_data, highlighted_nodes)
-        # parents = selection(g.es["edges"], population_probabilities, network_data)
-        # print(parents)
-
         pop_data = getPopulationData(g.es["population"], network_data)
+
+        # Perform selection
+        population_probabilities = get_probabilities(pop_data, highlighted_nodes)
+        parents = selection(pop_data, population_probabilities, network_data)
+        print(parents)
+
         print(isComplete(pop_data, connecting_nodes))
 
         # Step up to next generation (temporary)
