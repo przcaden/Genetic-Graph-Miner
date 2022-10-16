@@ -139,15 +139,17 @@ def getPopulationData(population, n_data):
 # Post: two edges are chosen for crossover in the next population
 def selection(pop_data, probabilities, n_data):
     chosen_edges = random.choices(pop_data, cum_weight=probabilities, k=2)
-
-    # for i in range(2):
-    #     r = random.random()
-    #     for (i, edge) in enumerate(population):
-    #         print('i: ',i,' edge: ', edge)
-    #         if r <= probabilities[i] and population[i]:
-    #             chosen_edges.append(n_data[i])
-    #             break
     return chosen_edges
+
+
+# Choose respective traits from parents and derive offspring.
+# Pre: selection has been performed and two parents were selected.
+# Post: two offspring are created based off the traits of parents.
+def parent_mating(parents):
+    # this is a very basic start to a crossover function, we will likely have to change this later
+    offspring1 = (parents[0][0], parents[1][1])
+    offspring2 = (parents[0][1], parents[1][0])
+    return offspring1, offspring2
 
 
 # Determine if a given population is complete.
@@ -167,7 +169,6 @@ def isComplete(pop_data, c_nodes):
                 if pop_data[i][0] in edge:
                     nodes_traversed.append(pop_data[i][1])
                     break
-
     # Determine if every node was hit
     return len(nodes_traversed) == len(c_nodes) and sorted(nodes_traversed) == sorted(c_nodes)
 
@@ -216,7 +217,8 @@ def main():
     g.es["population"] = base_population
 
     # Generate initial population
-    g.es["population"] = random_population()
+    population = random_population()
+    g.es["population"] = population
 
     
     #TESTING FOR WHETHER THE BFS ALGORITHM CAN FIND THE SHORTEST DISTANCE GIVEN TWO NDOES
@@ -230,7 +232,6 @@ def main():
     print(" shortest distance between nodes 4 and 8 is:" , minimumEdgesBFS(edges_adjacency_list, 4, 8), "edges aways")
    
     # Begin genetic algorithm
-    populations = [base_population]
     for current_generation_index in range(NUM_GENERATIONS):
 
         # Plot graph in matplotlib
@@ -249,11 +250,14 @@ def main():
         )
         plt.show()
 
-        pop_data = getPopulationData(g.es["population"], network_data)
+        pop_data = getPopulationData(population, network_data)
 
-        # Perform selection
+        # Perform selection, crossover, mutation
         population_probabilities = get_probabilities(pop_data, highlighted_nodes)
         parents = selection(pop_data, population_probabilities, network_data)
+        offspring1, offspring2 = parent_mating(parents)
+        population.append(offspring1, offspring2)
+        g.es["population"] = population
         print(parents)
 
         print(isComplete(pop_data, connecting_nodes))
