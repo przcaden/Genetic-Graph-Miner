@@ -72,6 +72,34 @@ def minimumEdgesBFS(edges, u, v):
             visited[edges[x][i]] = 1
     return distance[v]
  
+#function to determine edge fitness
+#using the algorithm above we will determine the edge fitness by comparing the nunber of edges away from the selected nodes.
+# Pre: generation has been initialized with traversed edges and user has selected nodes.
+# Post: fitness of the given edge has been calculated.
+def edgeFitness(edges, connection, h_nodes):
+    fitness_score = 50 #initialize with 1
+    number_of_edges_away = 0 #initialize this by 0
+   
+   #first find how far each of the nodes in the connection is from the nodes the user input.
+   #The ones that are closest will be more fit ie  a connection that has 0 and 1 edges away will be more fit. 
+    for i in h_nodes:
+        if connection[0] in h_nodes:
+            number_of_edges_away += minimumEdgesBFS(edges, connection[1], h_nodes[i])
+            if number_of_edges_away == 1: # if the other adjacent node is only one edge away then increase the fitness by 1
+                fitness_score += 1
+            else: 
+                #decrease the fitness by the number of edges away
+                fitness_score -= number_of_edges_away
+
+        if connection[1] in h_nodes:
+            number_of_edges_away += minimumEdgesBFS(edges, connection[0], h_nodes[i])
+            if number_of_edges_away == 1: # if the other adjacent node is only one edge away then increase the fitness by 1
+                fitness_score += 1
+            else: 
+                #decrease the fitness by the number of edges away
+                fitness_score -= number_of_edges_away
+
+    return fitness_score
 
 def determineStateFitness(state, n_data, h_nodes):
     #do we need this function? 
@@ -85,18 +113,6 @@ def determineStateFitness(state, n_data, h_nodes):
     return fitnesses
 
 
-# Determines the fitness of a specific edge.
-# Pre: generation has been initialized with traversed edges and user has selected nodes.
-# Post: fitness of the given edge has been calculated.
-def edgeFitness(connection, h_nodes):
-    fitness = 0
-    # Check if edge connects highlighted node(s).
-    # For each highlighted node connected, fitness increases by 1
-    if connection[0] in h_nodes:
-        fitness += 1
-    if connection[1] in h_nodes:
-        fitness += 1
-    return fitness
 
 # Randomly generate a set of edges, which will be the initial population.
 # Pre: none
