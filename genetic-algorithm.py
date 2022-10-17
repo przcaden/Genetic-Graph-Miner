@@ -102,16 +102,15 @@ def edgeFitness(edges, connection, h_nodes):
 
     return fitness_score
 
+
+# Calculate fitnesses for each edge in a population.
+# Pre: generation has been initialized with traversed edges and user has selected nodes.
+# Post: a list containing a fitness for each edge has been generated.
 def determineStateFitness(pop_data, h_nodes, network_data):
-    #do we need this function? 
-    # what if we make it return a list of the fitness of the connected edges in these generation?
     fitnesses = []
-    # If edge is highlighted (traversed), calculate fitness.
-    # Fitness increases by 1 for each highlighted node connected by the edge.
     for edge in pop_data:
         fitnesses.append(edgeFitness(network_data, edge, h_nodes))
     return fitnesses
-
 
 
 # Randomly generate a set of edges, which will be the initial population.
@@ -126,7 +125,6 @@ def random_population():
             rand_edge = random.randint(0,NUM_EDGES-1)
         generated_edges.append(rand_edge)
         new_path[rand_edge] = True
-    print("this is the initial population", new_path)
     return new_path
 
 
@@ -138,11 +136,12 @@ def get_probabilities(pop_data, h_nodes, network_data):
     total_fitness = sum(fitnesses)
     relative_fitnesses = [f/total_fitness for f in fitnesses]
     probabilities = [sum(relative_fitnesses[:i+1]) for i in range(len(relative_fitnesses))]
-    print('Calculated probabilities: ', probabilities)
     return probabilities
 
 
 # Get respective network data for all edges within a given population.
+# Pre: network data has been retrieved and edges have been randomly selected.
+# Post: a list containing network data corresponding to each edge has been created.
 def getPopulationData(population, n_data):
     pop_data = []
     for i in range(len(population)):
@@ -193,6 +192,7 @@ def isComplete(pop_data, c_nodes):
 
 # Function to be called when the plot's button is clicked.
 def next(val):
+    # Ends the infinite loop called when opening the plot
     plt.gcf().canvas.stop_event_loop()
 
 
@@ -239,7 +239,8 @@ def main():
     g.es["connections"] = network_data
     population = random_population()
     g.es["population"] = population
-    
+    print('Initial population: ', population)
+
     #TESTING FOR WHETHER THE BFS ALGORITHM CAN FIND THE SHORTEST DISTANCE GIVEN TWO NDOES
     #test the number of edges between two nodes
     # first get adjacency list of graph using network data
