@@ -163,12 +163,12 @@ def isComplete(pop_data, c_nodes):
     for i in range(len(pop_data)):
         if pop_data[i][0] in c_nodes and pop_data[i][0] not in nodes_traversed:
             for edge in pop_data:
-                if pop_data[i][1] in edge:
+                if pop_data[i][1] in edge and edge != pop_data[i]:
                     nodes_traversed.append(pop_data[i][0])
                     break
         if pop_data[i][1] in c_nodes and pop_data[i][1] not in nodes_traversed:
             for edge in pop_data:
-                if pop_data[i][0] in edge:
+                if pop_data[i][0] in edge and edge != pop_data[i]:
                     nodes_traversed.append(pop_data[i][1])
                     break
     # Determine if every node was hit
@@ -191,7 +191,7 @@ def main():
     for i in range(int(num_connected_nodes)):
         connecting_nodes[i] = 'x'
         while not connecting_nodes[i].isnumeric() or int(connecting_nodes[i])>18 or int(connecting_nodes[i])<0:
-            connecting_nodes[i] = str(input())
+            connecting_nodes[i] = str(input('Enter a node value: '))
     connecting_nodes = list(map(int, connecting_nodes))
 
     # Initialize graph data
@@ -223,7 +223,6 @@ def main():
     g.es["connections"] = network_data
     population = random_population()
     g.es["population"] = population
-
     
     #TESTING FOR WHETHER THE BFS ALGORITHM CAN FIND THE SHORTEST DISTANCE GIVEN TWO NDOES
     #test the number of edges between two nodes
@@ -235,31 +234,29 @@ def main():
     print ("this is the adjacency list of the graph", edges_adjacency_list)
     print(" shortest distance between nodes 4 and 8 is:" , minimumEdgesBFS(edges_adjacency_list, 4, 8), "edges aways")
 
-    # Plot graph in matplotlib
-    fig, ax = plt.subplots(figsize=(5,5))
-    ig.plot(
-        g,
-        target = ax,
-        vertex_size=0.25,
-        vertex_color=["steelblue" if node_highlighted else "salmon" for node_highlighted in g.vs["nodes"]],
-        vertex_frame_width=2.0,
-        vertex_frame_color="white",
-        vertex_label=g.vs["names"],
-        vertex_label_size=9.0,
-        edge_width=[2 if edge_traversed else 1 for edge_traversed in g.es["population"]],
-        edge_color=["#7142cf" if edge_traversed else "#AAA" for edge_traversed in g.es["population"]]
-    )
-    axes = plt.axes([0.6, 0.001, 0.3, 0.075])
-    bnext = Button(axes, 'Next Generation', color='yellow')
-    bnext.on_clicked(next)
-
     # Get network data of the population's edges only
     pop_data = getPopulationData(population, network_data)
    
     # Begin genetic algorithm
     for current_generation_index in range(NUM_GENERATIONS):
         
-        # Plot updated graph
+        # Plot graph in matplotlib
+        fig, ax = plt.subplots(figsize=(5,5))
+        ig.plot(
+            g,
+            target = ax,
+            vertex_size=0.25,
+            vertex_color=["steelblue" if node_highlighted else "salmon" for node_highlighted in g.vs["nodes"]],
+            vertex_frame_width=2.0,
+            vertex_frame_color="white",
+            vertex_label=g.vs["names"],
+            vertex_label_size=9.0,
+            edge_width=[2 if edge_traversed else 1 for edge_traversed in g.es["population"]],
+            edge_color=["#7142cf" if edge_traversed else "#AAA" for edge_traversed in g.es["population"]]
+        )
+        axes = plt.axes([0.6, 0.001, 0.3, 0.075])
+        bnext = Button(axes, 'Next Generation', color='yellow')
+        bnext.on_clicked(next)
         plt.show()
 
         # Perform selection, crossover, mutation
@@ -275,12 +272,13 @@ def main():
         for i in range(len(population)):
             if sorted(offspring1) == sorted(network_data[i]) or sorted(offspring2) == sorted(network_data[i]):
                 population[i] = True
-                print('change at i=',i,': tuple of ', network_data[i])
-            
+        
         g.es["population"] = population
+        
         print('Parents: ', parents)
 
         print(isComplete(pop_data, connecting_nodes))
+        plt.close()
 
 if __name__ == "__main__":
     main()
