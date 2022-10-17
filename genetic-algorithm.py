@@ -10,6 +10,7 @@
 
 import igraph as ig
 import matplotlib.pyplot as plt
+from matplotlib.widgets import Button
 import random
 import queue
 
@@ -101,14 +102,14 @@ def edgeFitness(edges, connection, h_nodes):
 
     return fitness_score
 
-def determineStateFitness(pop_data, h_nodes):
+def determineStateFitness(pop_data, h_nodes, network_data):
     #do we need this function? 
     # what if we make it return a list of the fitness of the connected edges in these generation?
     fitnesses = []
     # If edge is highlighted (traversed), calculate fitness.
     # Fitness increases by 1 for each highlighted node connected by the edge.
     for edge in pop_data:
-        fitnesses.append(edgeFitness(edge, h_nodes))
+        fitnesses.append(edgeFitness(network_data, edge, h_nodes))
     return fitnesses
 
 
@@ -132,8 +133,8 @@ def random_population():
 # Generate a probability for each edge in a population to be selected
 # Pre: a population has already been populated, along with a set of conencted edges.
 # Post: determine a set containing a probability of selection for each edge in the given population.
-def get_probabilities(pop_data, h_nodes):
-    fitnesses = determineStateFitness(pop_data, h_nodes)
+def get_probabilities(pop_data, h_nodes, network_data):
+    fitnesses = determineStateFitness(pop_data, h_nodes, network_data)
     total_fitness = sum(fitnesses)
     relative_fitnesses = [f/total_fitness for f in fitnesses]
     probabilities = [sum(relative_fitnesses[:i+1]) for i in range(len(relative_fitnesses))]
@@ -154,7 +155,8 @@ def getPopulationData(population, n_data):
 # Pre: a set of probabilities has been generated for the given population
 # Post: two edges are chosen for crossover in the next population
 def selection(pop_data, probabilities, n_data):
-    chosen_edges = random.choices(pop_data, cum_weight=probabilities, k=2)
+    chosen_edges = random.choices(pop_data, k=2)
+    #cum_weight=probabilities, 
     return chosen_edges
 
 
@@ -177,16 +179,22 @@ def isComplete(pop_data, c_nodes):
     for i in range(len(pop_data)):
         if pop_data[i][0] in c_nodes and pop_data[i][0] not in nodes_traversed:
             for edge in pop_data:
-                if pop_data[i][1] in edge:
+                if pop_data[i][1] in edge and edge != pop_data[i]:
                     nodes_traversed.append(pop_data[i][0])
                     break
         if pop_data[i][1] in c_nodes and pop_data[i][1] not in nodes_traversed:
             for edge in pop_data:
-                if pop_data[i][0] in edge:
+                if pop_data[i][0] in edge and edge != pop_data[i]:
                     nodes_traversed.append(pop_data[i][1])
                     break
     # Determine if every node was hit
     return len(nodes_traversed) == len(c_nodes) and sorted(nodes_traversed) == sorted(c_nodes)
+
+
+# Function to be called when the plot's button is clicked.
+def next(val):
+    plt.gcf().canvas.stop_event_loop()
+
 
 def main():
     # Get user inputted values for connected nodes:
@@ -199,13 +207,12 @@ def main():
     for i in range(int(num_connected_nodes)):
         connecting_nodes[i] = 'x'
         while not connecting_nodes[i].isnumeric() or int(connecting_nodes[i])>18 or int(connecting_nodes[i])<0:
-            connecting_nodes[i] = str(input())
+            connecting_nodes[i] = str(input('Enter a node value: '))
     connecting_nodes = list(map(int, connecting_nodes))
 
     # Initialize graph data
     node_names = []
     highlighted_nodes = []
-    base_population = [False]*NUM_EDGES # highlighted edges (bool)
     network_data = [[]] # data of all
 
     # Create node properties
@@ -224,18 +231,14 @@ def main():
             network_data.append( (int(l.split()[0]), int(l.split()[1]))  )
     network_data.remove([])
 
-    # Set initial graph characteristics
+    # Initialize graph with a random population
     g = ig.Graph(NUM_NODES, network_data)
     g["title"] = "Genetic Network"
     g.vs["names"] = node_names
     g.vs["nodes"] = highlighted_nodes
     g.es["connections"] = network_data
-    g.es["population"] = base_population
-
-    # Generate initial population
     population = random_population()
     g.es["population"] = population
-
     
     #TESTING FOR WHETHER THE BFS ALGORITHM CAN FIND THE SHORTEST DISTANCE GIVEN TWO NDOES
     #test the number of edges between two nodes
@@ -246,10 +249,13 @@ def main():
     
     print ("this is the adjacency list of the graph", edges_adjacency_list)
     print(" shortest distance between nodes 4 and 8 is:" , minimumEdgesBFS(edges_adjacency_list, 4, 8), "edges aways")
+
+    # Get network data of the population's edges only
+    pop_data = getPopulationData(population, network_data)
    
     # Begin genetic algorithm
     for current_generation_index in range(NUM_GENERATIONS):
-
+        
         # Plot graph in matplotlib
         fig, ax = plt.subplots(figsize=(5,5))
         ig.plot(
@@ -264,24 +270,32 @@ def main():
             edge_width=[2 if edge_traversed else 1 for edge_traversed in g.es["population"]],
             edge_color=["#7142cf" if edge_traversed else "#AAA" for edge_traversed in g.es["population"]]
         )
+        axes = plt.axes([0.6, 0.001, 0.3, 0.075])
+        bnext = Button(axes, 'Next Generation', color='yellow')
+        bnext.on_clicked(next)
         plt.show()
 
-        pop_data = getPopulationData(population, network_data)
-
         # Perform selection, crossover, mutation
-        population_probabilities = get_probabilities(pop_data, highlighted_nodes)
+        population_probabilities = get_probabilities(pop_data, highlighted_nodes, network_data)
         parents = selection(pop_data, population_probabilities, network_data)
         offspring1, offspring2 = parent_mating(parents)
-        population.append(offspring1, offspring2)
+        pop_data.append(offspring1)
+        pop_data.append(offspring2)
+        print('Offspring 1: ', offspring1)
+        print('Offspring 2: ', offspring2)
+
+        # Update graph with new population
+        for i in range(len(population)):
+            if sorted(offspring1) == sorted(network_data[i]) or sorted(offspring2) == sorted(network_data[i]):
+                population[i] = True
+        
         g.es["population"] = population
-        print(parents)
+        
+        print('Parents: ', parents)
 
         print(isComplete(pop_data, connecting_nodes))
-
-        # Step up to next generation (temporary)
-        user_input = ''
-        while user_input == '':
-            user_input = input('Enter any value to proceed to next generation: ')
+        # Commenting the following line so we can compare generations
+        # plt.close() # close window of previous generation
 
 if __name__ == "__main__":
     main()
