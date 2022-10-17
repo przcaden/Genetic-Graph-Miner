@@ -102,14 +102,14 @@ def edgeFitness(edges, connection, h_nodes):
 
     return fitness_score
 
-def determineStateFitness(pop_data, h_nodes):
+def determineStateFitness(pop_data, h_nodes, network_data):
     #do we need this function? 
     # what if we make it return a list of the fitness of the connected edges in these generation?
     fitnesses = []
     # If edge is highlighted (traversed), calculate fitness.
     # Fitness increases by 1 for each highlighted node connected by the edge.
     for edge in pop_data:
-        fitnesses.append(edgeFitness(edge, h_nodes))
+        fitnesses.append(edgeFitness(network_data, edge, h_nodes))
     return fitnesses
 
 
@@ -133,8 +133,8 @@ def random_population():
 # Generate a probability for each edge in a population to be selected
 # Pre: a population has already been populated, along with a set of conencted edges.
 # Post: determine a set containing a probability of selection for each edge in the given population.
-def get_probabilities(pop_data, h_nodes):
-    fitnesses = determineStateFitness(pop_data, h_nodes)
+def get_probabilities(pop_data, h_nodes, network_data):
+    fitnesses = determineStateFitness(pop_data, h_nodes, network_data)
     total_fitness = sum(fitnesses)
     relative_fitnesses = [f/total_fitness for f in fitnesses]
     probabilities = [sum(relative_fitnesses[:i+1]) for i in range(len(relative_fitnesses))]
@@ -276,7 +276,7 @@ def main():
         plt.show()
 
         # Perform selection, crossover, mutation
-        population_probabilities = get_probabilities(pop_data, highlighted_nodes)
+        population_probabilities = get_probabilities(pop_data, highlighted_nodes, network_data)
         parents = selection(pop_data, population_probabilities, network_data)
         offspring1, offspring2 = parent_mating(parents)
         pop_data.append(offspring1)
@@ -294,7 +294,8 @@ def main():
         print('Parents: ', parents)
 
         print(isComplete(pop_data, connecting_nodes))
-        plt.close()
+        # Commenting the following line so we can compare generations
+        # plt.close() # close window of previous generation
 
 if __name__ == "__main__":
     main()
