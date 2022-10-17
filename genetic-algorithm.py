@@ -16,8 +16,8 @@ import queue
 
 # Define algorithm constants
 NUM_RANDOM_EDGES = 8
-MUTATION_RATE = 0.01
-NUM_GENERATIONS = 5
+MUTATION_RATE = 0.1
+NUM_GENERATIONS = 20
 NUM_NODES = 19
 NUM_EDGES = 37
 
@@ -150,12 +150,22 @@ def getPopulationData(population, n_data):
     return pop_data
 
 
+# Get a random mutated value from the network's data.
+# Pre: random chance to mutate occurs.
+# Post: an edge from the network is chosen to be used in mutation.
+def mutate(n_data, pop_data):
+    val = pop_data[0]
+    while val in pop_data:
+        rand_index = random.randint(0, NUM_EDGES-1)
+        val = n_data[rand_index]
+    return val
+
+
 # Select two parents for crossover based on generated probabilities
 # Pre: a set of probabilities has been generated for the given population
 # Post: two edges are chosen for crossover in the next population
-def selection(pop_data, probabilities, n_data):
-    chosen_edges = random.choices(pop_data, k=2)
-    #cum_weight=probabilities, 
+def selection(pop_data, probabilities):
+    chosen_edges = random.choices(pop_data, cum_weights=probabilities, k=2)
     return chosen_edges
 
 
@@ -278,8 +288,14 @@ def main():
 
         # Perform selection, crossover, mutation
         population_probabilities = get_probabilities(pop_data, highlighted_nodes, network_data)
-        parents = selection(pop_data, population_probabilities, network_data)
+        parents = selection(pop_data, population_probabilities)
         offspring1, offspring2 = parent_mating(parents)
+
+        # Random chance of mutated offspring
+        if random.random() < MUTATION_RATE:
+            print('Mutated offspring 2')
+            offspring2 = mutate(network_data, pop_data)
+
         pop_data.append(offspring1)
         pop_data.append(offspring2)
         print('Offspring 1: ', offspring1)
