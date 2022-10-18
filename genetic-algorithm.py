@@ -76,39 +76,48 @@ def minimumEdgesBFS(edges, u, v):
 #using the algorithm above we will determine the edge fitness by comparing the nunber of edges away from the selected nodes.
 # Pre: generation has been initialized with traversed edges and user has selected nodes.
 # Post: fitness of the given edge has been calculated.
-def edgeFitness(edges, connection, h_nodes):
-    fitness_score = 50 #initialize with 1
-    number_of_edges_away = 0 #initialize this by 0
-   
+#h_nodes: nodes that the user would like to connect
+#population data. #will contain all the edges in the current population. 
+# a connection will basically be one edge which consists of two nodes. 
+#edges adjacency list contains a list of the entire graph
+def edgeFitness(edges_adjacency_list, connection, h_nodes):
+    fitness_score = 50 #initialize with 50
+    num_edges_away_from_first_node = [] #will hold the distances between the first node and the nodes that the user input
+    num_edges_away_from_second_node = [] # wiwll hold the distances between the  2nd node and the nodes that the user input
+
    #first find how far each of the nodes in the connection is from the nodes the user input.
    #The ones that are closest will be more fit ie  a connection that has 0 and 1 edges away will be more fit. 
-    for i in h_nodes:
-        if connection[0] in h_nodes:
-            number_of_edges_away += minimumEdgesBFS(edges, connection[1], h_nodes[i])
-            if number_of_edges_away == 1: # if the other adjacent node is only one edge away then increase the fitness by 1
-                fitness_score += 1
-            else: 
-                #decrease the fitness by the number of edges away
-                fitness_score -= number_of_edges_away
+    for i in range(len(h_nodes)):
+        num_edges_away_from_first_node.append(minimumEdgesBFS(edges_adjacency_list, h_nodes[i], connection[0]))
+        num_edges_away_from_second_node.append(minimumEdgesBFS(edges_adjacency_list, h_nodes[i], connection[1]))
+        # print("these are the distances of :", connection[0], "from", h_nodes[i], num_edges_away_from_first_node)
+        if connection[0] == h_nodes[i]:
+            fitness_score += 1
+        
+        elif connection[1] == h_nodes[i]:
+            fitness_score += 1
 
-        if connection[1] in h_nodes:
-            number_of_edges_away += minimumEdgesBFS(edges, connection[0], h_nodes[i])
-            if number_of_edges_away == 1: # if the other adjacent node is only one edge away then increase the fitness by 1
-                fitness_score += 1
-            else: 
-                #decrease the fitness by the number of edges away
-                fitness_score -= number_of_edges_away
-
+        else: 
+            #find which of the nodes in the edge is closest and decrease the fitness score by that.
+            #the farther a node is from one of the selectiode
+            for i in num_edges_away_from_first_node:
+                for j in num_edges_away_from_second_node:
+                    if i < j:
+                        fitness_score -= i
+                    else:
+                        fitness_score -= j
+        
     return fitness_score
 
-def determineStateFitness(pop_data, h_nodes):
+def determineStateFitness(pop_data, edges_adjacency_list,  h_nodes):
     #do we need this function? 
     # what if we make it return a list of the fitness of the connected edges in these generation?
     fitnesses = []
     # If edge is highlighted (traversed), calculate fitness.
     # Fitness increases by 1 for each highlighted node connected by the edge.
     for edge in pop_data:
-        fitnesses.append(edgeFitness(edge, h_nodes))
+        fitnesses.append(edgeFitness(edges_adjacency_list, edge, h_nodes))
+    print("these are the fitnesses", fitnesses)
     return fitnesses
 
 
@@ -132,8 +141,8 @@ def random_population():
 # Generate a probability for each edge in a population to be selected
 # Pre: a population has already been populated, along with a set of conencted edges.
 # Post: determine a set containing a probability of selection for each edge in the given population.
-def get_probabilities(pop_data, h_nodes):
-    fitnesses = determineStateFitness(pop_data, h_nodes)
+def get_probabilities(pop_data, edges_adjacency_list,  h_nodes):
+    fitnesses = determineStateFitness(pop_data, edges_adjacency_list, h_nodes)
     total_fitness = sum(fitnesses)
     relative_fitnesses = [f/total_fitness for f in fitnesses]
     probabilities = [sum(relative_fitnesses[:i+1]) for i in range(len(relative_fitnesses))]
@@ -147,15 +156,25 @@ def getPopulationData(population, n_data):
     for i in range(len(population)):
         if population[i]:
             pop_data.append(n_data[i])
+    print("the population data is: ", pop_data)
     return pop_data
 
 
 # Select two parents for crossover based on generated probabilities
 # Pre: a set of probabilities has been generated for the given population
 # Post: two edges are chosen for crossover in the next population
-def selection(pop_data, probabilities, n_data):
-    chosen_edges = random.choices(pop_data, cum_weight=probabilities, k=2)
-    return chosen_edges
+def selection(pop_data, probabilities):
+    # chosen_edges = random.choices(pop_data, cum_weight=probabilities, k=2)
+    # return chosen_edges
+    chosen = []
+    for n in range(2): #we want to generate two of the fittest organisms to serve as parents.
+        r = random.random() # generate a random number between 0 and 1
+        for (i, individual) in enumerate(pop_data):
+            if r <= probabilities[i]:
+                chosen.append(list(individual))
+                break
+    print("the selected parents are:", chosen)
+    return chosen
 
 
 # Choose respective traits from parents and derive offspring.
@@ -201,6 +220,7 @@ def main():
         while not connecting_nodes[i].isnumeric() or int(connecting_nodes[i])>18 or int(connecting_nodes[i])<0:
             connecting_nodes[i] = str(input())
     connecting_nodes = list(map(int, connecting_nodes))
+    print("connecting nodes", connecting_nodes)
 
     # Initialize graph data
     node_names = []
@@ -232,11 +252,6 @@ def main():
     g.es["connections"] = network_data
     g.es["population"] = base_population
 
-    # Generate initial population
-    population = random_population()
-    g.es["population"] = population
-
-    
     #TESTING FOR WHETHER THE BFS ALGORITHM CAN FIND THE SHORTEST DISTANCE GIVEN TWO NDOES
     #test the number of edges between two nodes
     # first get adjacency list of graph using network data
@@ -247,6 +262,10 @@ def main():
     print ("this is the adjacency list of the graph", edges_adjacency_list)
     print(" shortest distance between nodes 4 and 8 is:" , minimumEdgesBFS(edges_adjacency_list, 4, 8), "edges aways")
    
+    # Generate initial population
+    population = random_population()
+    g.es["population"] = population
+
     # Begin genetic algorithm
     for current_generation_index in range(NUM_GENERATIONS):
 
@@ -269,8 +288,8 @@ def main():
         pop_data = getPopulationData(population, network_data)
 
         # Perform selection, crossover, mutation
-        population_probabilities = get_probabilities(pop_data, highlighted_nodes)
-        parents = selection(pop_data, population_probabilities, network_data)
+        population_probabilities = get_probabilities(pop_data, edges_adjacency_list, connecting_nodes)
+        parents = selection(pop_data, population_probabilities)
         offspring1, offspring2 = parent_mating(parents)
         population.append(offspring1, offspring2)
         g.es["population"] = population
