@@ -178,11 +178,11 @@ def selection(pop_data, probabilities):
 # Choose respective traits from parents and derive offspring.
 # Pre: selection has been performed and two parents were selected.
 # Post: two offspring are created based off the traits of parents.
-def parent_mating(parents):
-    offspring1 = (parents[0][0], parents[1][1])
-    offspring2 = (parents[0][1], parents[1][0])
-    return offspring1, offspring2
-
+ # single-point crossover 
+def crossover(parent1,parent2,point):
+    for i in range(point,len(parent1)):
+        parent1[i],parent2[i] = parent2[i],parent1[i]  #swap the genetic information
+    return parent1,parent2 #offpsrings
 
 # Determine if a given population is complete.
 # Pre: population is generated.
@@ -299,7 +299,10 @@ def main():
         # Perform selection, crossover, mutation
         population_probabilities = get_probabilities(pop_data, edges_adjacency_list, connecting_nodes) #probabilities of selection
         parents = selection(pop_data, population_probabilities) #selection
-        offspring1, offspring2 = parent_mating(parents)  #crossove
+        parent1 = parents[0]
+        parent2 = parents[1]
+        point = random.randint(1,len(parent1))  #Crossover point
+        offspring1,offspring2 = crossover(parent1,parent2,point)    
 
         # Random chance of mutated offspring
         if random.random() < MUTATION_RATE:
