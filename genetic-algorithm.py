@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
 import random
 import queue
+import math
 
 # Define algorithm constants
 NUM_RANDOM_EDGES = 8
@@ -81,21 +82,21 @@ def minimumEdgesBFS(edges, u, v):
 #population data. #will contain all the edges in the current population. 
 # a connection will basically be one edge which consists of two nodes. 
 #edges adjacency list contains a list of the entire graph
-def edgeFitness(edges_adjacency_list, connection, h_nodes):
+def edgeFitness(edges_adjacency_list, connection, c_nodes):
     fitness_score = 50 #initialize with 50
     num_edges_away_from_first_node = [] #will hold the distances between the first node and the nodes that the user input
     num_edges_away_from_second_node = [] # wiwll hold the distances between the  2nd node and the nodes that the user input
 
    #first find how far each of the nodes in the connection is from the nodes the user input.
    #The ones that are closest will be more fit ie  a connection that has 0 and 1 edges away will be more fit. 
-    for i in range(len(h_nodes)):
-        num_edges_away_from_first_node.append(minimumEdgesBFS(edges_adjacency_list, h_nodes[i], connection[0]))
-        num_edges_away_from_second_node.append(minimumEdgesBFS(edges_adjacency_list, h_nodes[i], connection[1]))
+    for i in range(len(c_nodes)):
+        num_edges_away_from_first_node.append(minimumEdgesBFS(edges_adjacency_list, c_nodes[i], connection[0]))
+        num_edges_away_from_second_node.append(minimumEdgesBFS(edges_adjacency_list, c_nodes[i], connection[1]))
         # print("these are the distances of :", connection[0], "from", h_nodes[i], num_edges_away_from_first_node)
-        if connection[0] == h_nodes[i]:
+        if connection[0] == c_nodes[i]:
             fitness_score += 1
         
-        elif connection[1] == h_nodes[i]:
+        elif connection[1] == c_nodes[i]:
             fitness_score += 1
 
         else: 
@@ -110,12 +111,10 @@ def edgeFitness(edges_adjacency_list, connection, h_nodes):
         
     return fitness_score
 
-def determineStateFitness(pop_data, edges_adjacency_list,  h_nodes):
-    #do we need this function? 
-    # what if we make it return a list of the fitness of the connected edges in these generation?
+def determineStateFitness(pop_data, edges_adjacency_list,  c_nodes):
     fitnesses = []
     for edge in pop_data:
-        fitnesses.append(edgeFitness(edges_adjacency_list, edge, h_nodes))
+        fitnesses.append(edgeFitness(edges_adjacency_list, edge, c_nodes))
     print("these are the fitnesses", fitnesses)
     return fitnesses
 
@@ -163,6 +162,7 @@ def getPopulationData(population, n_data):
 # Post: an edge from the network is chosen to be used in mutation.
 def mutate(n_data, pop_data):
     val = pop_data[0]
+    # Get a random edge. If it is already in the population, generate a new one.
     while val in pop_data:
         rand_index = random.randint(0, NUM_EDGES-1)
         val = n_data[rand_index]
@@ -196,6 +196,42 @@ def parent_mating(parents):
     return offspring1, offspring2
 
 
+# Finds unneeded edges from a population.
+def refinePopulation(pop_data, n_data, c_nodes, h_nodes):
+    complete = isComplete(pop_data, c_nodes)
+
+    removal_buffer = []
+    if complete:
+        # In a complete population, non-highlighted nodes should either have 0 or 2 edges connected.
+        # If it has one edge connected, remove it from the generation.
+        for n in range(NUM_NODES):
+            edges_connected = 0
+            for edge in pop_data:
+                if n in edge:
+                    edges_connected += 1
+            if not h_nodes[n] and edges_connected == 1:
+                for edge in pop_data:
+                    if n in edge and edge not in removal_buffer:
+                        removal_buffer.append(edge)
+                        break
+    else:
+        fitnesses = determineStateFitness(pop_data, n_data, c_nodes)
+        avg_fitness = sum(fitnesses) / len(fitnesses)
+        
+        # Calculate 1s of standard deviation
+        v = 0
+        for f in fitnesses:
+            v += pow(f - avg_fitness, 2)
+        sdev = math.sqrt( int(v/avg_fitness) )
+
+        # If solution hasn't been found, remove the least fit edges
+        for i in range(len(pop_data)):
+            if pop_data[i][0] not in c_nodes and pop_data[i][1] not in c_nodes:
+                if (fitnesses[i] < avg_fitness - sdev) and pop_data[i] not in removal_buffer:
+                    removal_buffer.append(pop_data[i])
+        
+    return removal_buffer
+
 # Determine if a given population is complete.
 # Pre: population is generated.
 # Post: a boolean value is determined, corresponding to if all highlighted nodes are accessed.
@@ -218,10 +254,31 @@ def isComplete(pop_data, c_nodes):
 
 
 # Function to be called when the plot's button is clicked.
-def next(val):
+def next_gen(val):
     # Ends the infinite loop called when opening the plot
     plt.gcf().canvas.stop_event_loop()
 
+
+def plot_graph():
+    global g
+    # Plot graph in matplotlib
+    fig, ax = plt.subplots(figsize=(5,5))
+    axes = plt.axes([0.6, 0.001, 0.3, 0.075])
+    bnext = Button(axes, 'Next Generation', color='yellow')
+    bnext.on_clicked(next_gen)
+    ig.plot(
+        g,
+        target = ax,
+        vertex_size=0.25,
+        vertex_color=["steelblue" if node_highlighted else "salmon" for node_highlighted in g.vs["nodes"]],
+        vertex_frame_width=2.0,
+        vertex_frame_color="white",
+        vertex_label=g.vs["names"],
+        vertex_label_size=9.0,
+        edge_width=[2 if edge_traversed else 1 for edge_traversed in g.es["population"]],
+        edge_color=["#7142cf" if edge_traversed else "#AAA" for edge_traversed in g.es["population"]]
+    )
+    plt.show()
 
 def main():
     # Get user inputted values for connected nodes:
@@ -260,13 +317,13 @@ def main():
     network_data.remove([])
 
     # Initialize graph with a random population
+    global g
     g = ig.Graph(NUM_NODES, network_data)
     g["title"] = "Genetic Network"
     g.vs["names"] = node_names
     g.vs["nodes"] = highlighted_nodes
     g.es["connections"] = network_data
     population = random_population()
-    g.es["population"] = population
     print('Initial population: ', population)
 
     #TESTING FOR WHETHER THE BFS ALGORITHM CAN FIND THE SHORTEST DISTANCE GIVEN TWO NDOES
@@ -281,60 +338,57 @@ def main():
 
     # Get network data of the population's edges only
     pop_data = getPopulationData(population, network_data)
-   
-    # Generate initial population
-    population = random_population()
     g.es["population"] = population
 
     # Begin genetic algorithm
-    for current_generation_index in range(NUM_GENERATIONS):
-        
-        # Plot graph in matplotlib
-        fig, ax = plt.subplots(figsize=(5,5))
-        ig.plot(
-            g,
-            target = ax,
-            vertex_size=0.25,
-            vertex_color=["steelblue" if node_highlighted else "salmon" for node_highlighted in g.vs["nodes"]],
-            vertex_frame_width=2.0,
-            vertex_frame_color="white",
-            vertex_label=g.vs["names"],
-            vertex_label_size=9.0,
-            edge_width=[2 if edge_traversed else 1 for edge_traversed in g.es["population"]],
-            edge_color=["#7142cf" if edge_traversed else "#AAA" for edge_traversed in g.es["population"]]
-        )
-        axes = plt.axes([0.6, 0.001, 0.3, 0.075])
-        bnext = Button(axes, 'Next Generation', color='yellow')
-        bnext.on_clicked(next)
-        plt.show()
+    find_next_generation = True
+    while find_next_generation:
 
-        # Perform selection, crossover, mutation
+        # Plot graph in matplotlib
+        plot_graph()
+
+        # Perform selection
         population_probabilities = get_probabilities(pop_data, edges_adjacency_list, connecting_nodes)
         parents = selection(pop_data, population_probabilities)
+
+        # Create 2 offspring through crossover
         offspring1, offspring2 = parent_mating(parents)
 
-        # Random chance of mutated offspring
+        # Random chance of mutating an offspring
         if random.random() < MUTATION_RATE:
-            print('Mutated offspring 2')
-            offspring2 = mutate(network_data, pop_data)
+            if edgeFitness(network_data, offspring1, connecting_nodes) < edgeFitness(network_data, offspring2, connecting_nodes):
+                print('Mutated offspring 2')
+                offspring2 = mutate(network_data, pop_data)
+            else:
+                print('Mutated offspring 1')
+                offspring1 = mutate(network_data, pop_data)
 
+        # Find unneeded edges in the current population.
+        # If the population is complete and there are no unneeded edges, we can stop generating new populations.
+        removal_buffer = refinePopulation(pop_data, network_data, connecting_nodes, highlighted_nodes)
+        if isComplete(pop_data, connecting_nodes) and len(removal_buffer) == 0:
+            find_next_generation = False
+        
+        for edge in removal_buffer:
+            print('removed edge')
+            pop_data.remove(edge)
+
+        # After refining the population, add the created offspring
         pop_data.append(offspring1)
         pop_data.append(offspring2)
         print('Offspring 1: ', offspring1)
         print('Offspring 2: ', offspring2)
 
-        # Update graph with new population
-        for i in range(len(population)):
-            if sorted(offspring1) == sorted(network_data[i]) or sorted(offspring2) == sorted(network_data[i]):
-                population[i] = True
-        
+        # Update graph with current population
+        population = [False] * NUM_EDGES
+        for i in range(NUM_EDGES):
+            for edge in pop_data:
+                if sorted(network_data[i]) == sorted(edge):
+                    population[i] = True
         g.es["population"] = population
-        
-        print('Parents: ', parents)
 
-        print(isComplete(pop_data, connecting_nodes))
-        # Commenting the following line so we can compare generations
-        # plt.close() # close window of previous generation
+    # Plot solution of final generation
+    plot_graph()
 
 if __name__ == "__main__":
     main()
