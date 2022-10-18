@@ -23,13 +23,6 @@ NUM_NODES = 19
 NUM_EDGES = 37
 
 
-# Function that determines the given fitness of a given generation.
-# Pre: generation has been initialized with traversed edges.
-#      all node connection data has been created and user has selected nodes.
-# Post: fitness of the given state has been calculated.
-
-
-#function to determine the distance between two nodes, ie the number of edges between nodes
 # Get respective network data for all edges within a given population.
 def getPopulationData(population, n_data):
     pop_data = []
@@ -39,7 +32,22 @@ def getPopulationData(population, n_data):
     return pop_data
 
 
-# function to add edges to an adjacency list
+# Randomly generate a set of edges, which will be the initial population.
+# Pre: none
+# Post: a random set of [NUM_EDGES] edges are selected to be part of a poulation.
+def random_population():
+    new_path = [False] * NUM_EDGES
+    generated_edges = []
+    for i in range(NUM_RANDOM_EDGES):
+        rand_edge = random.randint(0,NUM_EDGES-1) # random index
+        while rand_edge in generated_edges:
+            rand_edge = random.randint(0,NUM_EDGES-1)
+        generated_edges.append(rand_edge)
+        new_path[rand_edge] = True
+    return new_path
+
+
+# function to add edges to an adjacency list (wil help creating an adjacency list for the graph)
 def addEdges(edges, x, y):
     edges[x].append(y)
     edges[y].append(x)
@@ -74,65 +82,48 @@ def minimumEdgesBFS(edges, u, v):
             visited[edges[x][i]] = 1
     return distance[v]
  
-#function to determine edge fitness
-#using the algorithm above we will determine the edge fitness by comparing the nunber of edges away from the selected nodes.
-# Pre: generation has been initialized with traversed edges and user has selected nodes.
-# Post: fitness of the given edge has been calculated.
-#h_nodes: nodes that the user would like to connect
-#population data. #will contain all the edges in the current population. 
-# a connection will basically be one edge which consists of two nodes. 
+
+#this function will get the distance of the specific nodes and return two lists 
 #edges adjacency list contains a list of the entire graph
-def edgeFitness(edges_adjacency_list, connection, c_nodes):
-    fitness_score = 50 #initialize with 50
+#function to determine the distance between two nodes, ie the number of edges between nodes
+def getEdgeDistances(edges_adjacency_list, connection, h_nodes):
     num_edges_away_from_first_node = [] #will hold the distances between the first node and the nodes that the user input
     num_edges_away_from_second_node = [] # wiwll hold the distances between the  2nd node and the nodes that the user input
 
-   #first find how far each of the nodes in the connection is from the nodes the user input.
-   #The ones that are closest will be more fit ie  a connection that has 0 and 1 edges away will be more fit. 
-    for i in range(len(c_nodes)):
-        num_edges_away_from_first_node.append(minimumEdgesBFS(edges_adjacency_list, c_nodes[i], connection[0]))
-        num_edges_away_from_second_node.append(minimumEdgesBFS(edges_adjacency_list, c_nodes[i], connection[1]))
-        # print("these are the distances of :", connection[0], "from", h_nodes[i], num_edges_away_from_first_node)
-        if connection[0] == c_nodes[i]:
-            fitness_score += 1
-        
-        elif connection[1] == c_nodes[i]:
-            fitness_score += 1
+    for i in range(len(h_nodes)):
+        num_edges_away_from_first_node.append(minimumEdgesBFS(edges_adjacency_list, h_nodes[i], connection[0]))
+        num_edges_away_from_second_node.append(minimumEdgesBFS(edges_adjacency_list, h_nodes[i], connection[1]))
+    return num_edges_away_from_first_node, num_edges_away_from_second_node
 
-        else: 
-            #find which of the nodes in the edge is closest and decrease the fitness score by that.
-            #the farther a node is from one of the selectiode
-            for i in num_edges_away_from_first_node:
-                for j in num_edges_away_from_second_node:
-                    if i < j:
-                        fitness_score -= i
-                    else:
-                        fitness_score -= j
-        
+
+#function to determine edge fitness
+# we will determine the edge fitness by comparing the nunber of edges away from the selected nodes.
+# Pre: generation has been initialized with traversed edges and user has selected nodes.
+# Post: fitness of the given edge has been calculated.
+def edgeFitness(list_1, list_2):
+    fitness_score = 50
+    #compare the values in list 1 and list 2 and update fitness score depending on which one is closer
+    for i in range(len(list_1)):
+        for j in range(len(list_2)):
+            if list_1[i] <= list_2[j]:
+                fitness_score -= list_1[i]
+            else:
+                fitness_score -= list_2[j]
+
     return fitness_score
 
-def determineStateFitness(pop_data, edges_adjacency_list,  c_nodes):
+# Function that determines the given fitness of a given generation.
+# Pre: generation has been initialized with traversed edges.
+#      all node connection data has been created and user has selected nodes.
+# Post: fitness of the given state has been calculated.
+#uses edge fitness to get the overal state fitness
+def determineStateFitness(pop_data, edges_adjacency_list,  h_nodes):
     fitnesses = []
     for edge in pop_data:
-        fitnesses.append(edgeFitness(edges_adjacency_list, edge, c_nodes))
+        list_1, list_2 = getEdgeDistances(edges_adjacency_list, edge, h_nodes)
+        fitnesses.append(edgeFitness(list_1, list_2))
     print("these are the fitnesses", fitnesses)
     return fitnesses
-
-
-# Randomly generate a set of edges, which will be the initial population.
-# Pre: none
-# Post: a random set of [NUM_EDGES] edges are selected to be part of a poulation.
-def random_population():
-    new_path = [False] * NUM_EDGES
-    generated_edges = []
-    for i in range(NUM_RANDOM_EDGES):
-        rand_edge = random.randint(0,NUM_EDGES-1) # random index
-        while rand_edge in generated_edges:
-            rand_edge = random.randint(0,NUM_EDGES-1)
-        generated_edges.append(rand_edge)
-        new_path[rand_edge] = True
-    return new_path
-
 
 # Generate a probability for each edge in a population to be selected
 # Pre: a population has already been populated, along with a set of conencted edges.
@@ -190,7 +181,6 @@ def selection(pop_data, probabilities):
 # Pre: selection has been performed and two parents were selected.
 # Post: two offspring are created based off the traits of parents.
 def parent_mating(parents):
-    # this is a very basic start to a crossover function, we will likely have to change this later
     offspring1 = (parents[0][0], parents[1][1])
     offspring2 = (parents[0][1], parents[1][0])
     return offspring1, offspring2
