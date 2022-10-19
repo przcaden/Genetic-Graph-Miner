@@ -343,7 +343,9 @@ def main():
 
         # Random chance of mutating an offspring
         if random.random() < MUTATION_RATE:
-            if edgeFitness(network_data, offspring1, connecting_nodes) < edgeFitness(network_data, offspring2, connecting_nodes):
+            list_1 = getEdgeDistances(network_data, offspring1, connecting_nodes)
+            list_2 = getEdgeDistances(network_data, offspring2, connecting_nodes)
+            if edgeFitness(list_1) < edgeFitness(list_2):
                 print('Mutated offspring 2')
                 offspring2 = mutate(network_data, pop_data)
             else:
