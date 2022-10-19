@@ -189,8 +189,8 @@ def crossover(parent1,parent2,point):
 # Finds unneeded edges from a population.
 def refinePopulation(pop_data, n_data, c_nodes, h_nodes):
     complete = isComplete(pop_data, c_nodes)
-
     removal_buffer = []
+    
     if complete:
         # In a complete population, non-highlighted nodes should either have 0 or 2 edges connected.
         # If it has one edge connected, remove it from the generation.
@@ -207,17 +207,11 @@ def refinePopulation(pop_data, n_data, c_nodes, h_nodes):
     else:
         fitnesses = determineStateFitness(pop_data, n_data, c_nodes)
         avg_fitness = sum(fitnesses) / len(fitnesses)
-        
-        # Calculate 1s of standard deviation
-        v = 0
-        for f in fitnesses:
-            v += pow(f - avg_fitness, 2)
-        sdev = math.sqrt( int(v/avg_fitness) )
 
         # If solution hasn't been found, remove the least fit edges
         for i in range(len(pop_data)):
             if pop_data[i][0] not in c_nodes and pop_data[i][1] not in c_nodes:
-                if (fitnesses[i] < avg_fitness - sdev) and pop_data[i] not in removal_buffer:
+                if (fitnesses[i] < avg_fitness * 0.68) and pop_data[i] not in removal_buffer:
                     removal_buffer.append(pop_data[i])
         
     return removal_buffer
@@ -250,7 +244,7 @@ def next_gen(val):
 
 
 def plot_graph():
-    global g
+    global g, ax
     # Plot graph in matplotlib
     fig, ax = plt.subplots(figsize=(5,5))
     axes = plt.axes([0.6, 0.001, 0.3, 0.075])
@@ -333,27 +327,8 @@ def main():
     # Begin genetic algorithm
     find_next_generation = True
     while find_next_generation:
-
+        
         # Plot graph in matplotlib
-        fig, ax = plt.subplots(figsize=(5,5))
-        ig.plot(
-            g,
-            target = ax,
-            vertex_size=0.25,
-            vertex_color=["steelblue" if node_highlighted else "salmon" for node_highlighted in g.vs["nodes"]],
-            vertex_frame_width=2.0,
-            vertex_frame_color="white",
-            vertex_label=g.vs["names"],
-            vertex_label_size=9.0,
-            edge_width=[2 if edge_traversed else 1 for edge_traversed in g.es["population"]],
-            edge_color=["#7142cf" if edge_traversed else "#AAA" for edge_traversed in g.es["population"]]
-        )
-        axes = plt.axes([0.6, 0.001, 0.3, 0.075])
-        bnext = Button(axes, 'Next Generation', color='yellow')
-        bnext.on_clicked(next)
-        plt.show()
-
-        # Random chance of mutated offspring
         plot_graph()
 
         # Perform selection
@@ -361,12 +336,10 @@ def main():
         parents = selection(pop_data, population_probabilities) #selection
         parent1 = parents[0]
         parent2 = parents[1]
-
         
         # Create 2 offspring through crossover
         point = random.randint(1,len(parent1))  #Crossover point
         offspring1,offspring2 = crossover(parent1,parent2,point)    
-
 
         # Random chance of mutating an offspring
         if random.random() < MUTATION_RATE:
@@ -383,6 +356,7 @@ def main():
         if isComplete(pop_data, connecting_nodes) and len(removal_buffer) == 0:
             find_next_generation = False
         
+        # Remove all unfit edges
         for edge in removal_buffer:
             print('removed edge')
             pop_data.remove(edge)
