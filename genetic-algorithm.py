@@ -308,7 +308,6 @@ def main():
     g.vs["nodes"] = highlighted_nodes
     g.es["connections"] = network_data
     population = random_population()
-    print('Initial population: ', population)
 
     #TESTING FOR WHETHER THE BFS ALGORITHM CAN FIND THE SHORTEST DISTANCE GIVEN TWO NDOES
     #test the number of edges between two nodes
@@ -317,9 +316,6 @@ def main():
     for a, b in network_data:
         addEdges(edges_adjacency_list, a, b)
     
-    print ("this is the adjacency list of the graph", edges_adjacency_list)
-    print(" shortest distance between nodes 4 and 8 is:" , minimumEdgesBFS(edges_adjacency_list, 4, 8), "edges aways")
-
     # Get network data of the population's edges only
     pop_data = getPopulationData(population, network_data)
     g.es["population"] = population
@@ -343,9 +339,9 @@ def main():
 
         # Random chance of mutating an offspring
         if random.random() < MUTATION_RATE:
-            list_1 = getEdgeDistances(network_data, offspring1, connecting_nodes)
-            list_2 = getEdgeDistances(network_data, offspring2, connecting_nodes)
-            if edgeFitness(list_1) < edgeFitness(list_2):
+            offspring1_list_1, offspring1_list_2 = getEdgeDistances(network_data, offspring1, connecting_nodes)
+            offspring2_list1,offspring2_list2 = getEdgeDistances(network_data, offspring2, connecting_nodes)
+            if edgeFitness(offspring1_list_1, offspring1_list_2) < edgeFitness(offspring2_list1, offspring2_list1):
                 print('Mutated offspring 2')
                 offspring2 = mutate(network_data, pop_data)
             else:
