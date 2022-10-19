@@ -360,6 +360,7 @@ def main():
                 print('Mutated offspring 1')
                 offspring1 = mutate(network_data, pop_data)
             offspring_buffer.clear() # clear buffer once mutation occurs
+            MUTATION_RATE = 0.1 # reset mutation rate in case it was altered
 
         # Find unneeded edges in the current population.
         # If the population is complete and there are no unneeded edges, we can stop generating new populations.
