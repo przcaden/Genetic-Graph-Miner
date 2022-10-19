@@ -8,6 +8,7 @@
 ############################################################################################
 
 
+from multiprocessing.reduction import duplicate
 import igraph as ig
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
@@ -17,7 +18,6 @@ import math
 
 # Define algorithm constants
 NUM_RANDOM_EDGES = 8
-MUTATION_RATE = 0.1
 NUM_GENERATIONS = 20
 NUM_NODES = 19
 NUM_EDGES = 37
@@ -279,10 +279,11 @@ def main():
     connecting_nodes = list(map(int, connecting_nodes))
     print("connecting nodes", connecting_nodes)
 
-    # Initialize graph data
+    # Initialize graph information
     node_names = []
     highlighted_nodes = []
     network_data = [[]] # data of all
+    MUTATION_RATE = 0.1
 
     # Create node properties
     for i in range(NUM_NODES):
@@ -322,6 +323,7 @@ def main():
 
     # Begin genetic algorithm
     find_next_generation = True
+    offspring_buffer = []
     while find_next_generation:
         
         # Plot graph in matplotlib
@@ -335,7 +337,17 @@ def main():
         
         # Create 2 offspring through crossover
         point = random.randint(1,len(parent1))  #Crossover point
-        offspring1,offspring2 = crossover(parent1,parent2,point)    
+        offspring1,offspring2 = crossover(parent1,parent2,point)
+
+        # If duplicate offspring occur, raise the mutation rate
+        duplicate_count = 0
+        if len(offspring_buffer) > 0:
+            for i in offspring_buffer:
+                if offspring1 == i or offspring2 == i:
+                    duplicate_count += 1
+            MUTATION_RATE += 0.05 * duplicate_count
+        offspring_buffer.append(offspring1)
+        offspring_buffer.append(offspring2)
 
         # Random chance of mutating an offspring
         if random.random() < MUTATION_RATE:
@@ -347,6 +359,7 @@ def main():
             else:
                 print('Mutated offspring 1')
                 offspring1 = mutate(network_data, pop_data)
+            offspring_buffer.clear() # clear buffer once mutation occurs
 
         # Find unneeded edges in the current population.
         # If the population is complete and there are no unneeded edges, we can stop generating new populations.
@@ -358,6 +371,7 @@ def main():
         for edge in removal_buffer:
             print('removed edge')
             pop_data.remove(edge)
+        removal_buffer.clear()
 
         # After refining the population, add the created offspring
         pop_data.append(offspring1)
