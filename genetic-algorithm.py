@@ -8,13 +8,11 @@
 ############################################################################################
 
 
-from multiprocessing.reduction import duplicate
 import igraph as ig
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
 import random
 import queue
-import math
 
 # Define algorithm constants
 NUM_RANDOM_EDGES = 8
@@ -122,7 +120,6 @@ def determineStateFitness(pop_data, edges_adjacency_list,  h_nodes):
     for edge in pop_data:
         list_1, list_2 = getEdgeDistances(edges_adjacency_list, edge, h_nodes)
         fitnesses.append(edgeFitness(list_1, list_2))
-    print("these are the fitnesses", fitnesses)
     return fitnesses
 
 # Generate a probability for each edge in a population to be selected
@@ -144,7 +141,6 @@ def getPopulationData(population, n_data):
     for i in range(len(population)):
         if population[i]:
             pop_data.append(n_data[i])
-    print("the population data is: ", pop_data)
     return pop_data
 
 
@@ -173,7 +169,6 @@ def selection(pop_data, probabilities):
             if r <= probabilities[i]:
                 chosen.append(list(individual))
                 break
-    print("the selected parents are:", chosen)
     return chosen
 
 
@@ -277,7 +272,6 @@ def main():
         while not connecting_nodes[i].isnumeric() or int(connecting_nodes[i])>18 or int(connecting_nodes[i])<0:
             connecting_nodes[i] = str(input('Enter a node value: '))
     connecting_nodes = list(map(int, connecting_nodes))
-    print("connecting nodes", connecting_nodes)
 
     # Initialize graph information
     node_names = []
