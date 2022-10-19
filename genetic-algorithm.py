@@ -188,7 +188,7 @@ def  crossover(parent1, parent2, point, network_data):
         #check for whether the offsprings are in the graph, 
         # only select them if they're part of the graph, if not we have to do another crossover and get new offsprings.
         if (offspring1 not in network_data) or (offspring2 not in network_data):
-            crossover_helper(parent1, parent2, point)
+            crossover_helper(parent1, parent2, point) #do another crossover until we get offsprings in the map
         else:
             return offspring1, offspring2
 
