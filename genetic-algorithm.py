@@ -176,10 +176,21 @@ def selection(pop_data, probabilities):
 # Pre: selection has been performed and two parents were selected.
 # Post: two offspring are created based off the traits of parents.
  # single-point crossover 
-def crossover(parent1,parent2,point):
+def crossover_helper(parent1,parent2,point):
     for i in range(point,len(parent1)):
         parent1[i],parent2[i] = parent2[i],parent1[i]  #swap the genetic information
+
     return parent1,parent2 #offpsrings
+
+def  crossover(parent1, parent2, point, network_data):
+        offspring1 = tuple(parent1)
+        offspring2 = tuple(parent2)
+        #check for whether the offsprings are in the graph, 
+        # only select them if they're part of the graph, if not we have to do another crossover and get new offsprings.
+        if (offspring1 not in network_data) or (offspring2 not in network_data):
+            crossover_helper(parent1, parent2, point)
+        else:
+            return offspring1, offspring2
 
 # Finds unneeded edges from a population.
 def refinePopulation(pop_data, n_data, c_nodes, h_nodes):
@@ -295,6 +306,7 @@ def main():
             network_data.append( (int(l.split()[0]), int(l.split()[1]))  )
     network_data.remove([])
 
+    print("which is the network data", network_data)
     # Initialize graph with a random population
     global g
     g = ig.Graph(NUM_NODES, network_data)
@@ -330,8 +342,9 @@ def main():
         parent2 = parents[1]
         
         # Create 2 offspring through crossover
+
         point = random.randint(1,len(parent1))  #Crossover point
-        offspring1,offspring2 = crossover(parent1,parent2,point)
+        offspring1, offspring2 = crossover(parent1,parent2, point, network_data)
 
         # If duplicate offspring occur, raise the mutation rate
         duplicate_count = 0
