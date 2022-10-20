@@ -19,6 +19,8 @@ NUM_RANDOM_EDGES = 8
 NUM_GENERATIONS = 20
 NUM_NODES = 19
 NUM_EDGES = 37
+# have a list to track the offsprings
+generated_offsprings = []
 
 
 # Get respective network data for all edges within a given population.
@@ -187,10 +189,15 @@ def  crossover(parent1, parent2, point, network_data):
         offspring2 = tuple(parent2)
         #check for whether the offsprings are in the graph, 
         # only select them if they're part of the graph, if not we have to do another crossover and get new offsprings.
-        if (offspring1 not in network_data) or (offspring2 not in network_data):
-            crossover_helper(parent1, parent2, point) #do another crossover until we get offsprings in the map
-        else:
-            return offspring1, offspring2
+        while (offspring1 or offspring2) not in generated_offsprings:
+            if (offspring1 not in network_data) or (offspring2 not in network_data):
+                crossover_helper(parent1, parent2, point) #do another crossover until we get offsprings that are in the map
+            else:
+                generated_offsprings.append(offspring1)
+                generated_offsprings.append(offspring2)
+                
+        print("tracking the offspring list", generated_offsprings)
+        return offspring1, offspring2
 
 # Finds unneeded edges from a population.
 def refinePopulation(pop_data, n_data, c_nodes, h_nodes):
@@ -306,7 +313,6 @@ def main():
             network_data.append( (int(l.split()[0]), int(l.split()[1]))  )
     network_data.remove([])
 
-    print("which is the network data", network_data)
     # Initialize graph with a random population
     global g
     g = ig.Graph(NUM_NODES, network_data)
@@ -355,6 +361,7 @@ def main():
             MUTATION_RATE += 0.05 * duplicate_count
         offspring_buffer.append(offspring1)
         offspring_buffer.append(offspring2)
+
 
         # Random chance of mutating an offspring
         if random.random() < MUTATION_RATE:
