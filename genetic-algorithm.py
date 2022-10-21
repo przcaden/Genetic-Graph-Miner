@@ -8,11 +8,14 @@
 ############################################################################################
 
 
+from unicodedata import name
 import igraph as ig
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
 import random
 import queue
+
+from numpy import minimum
 
 # Define algorithm constants
 NUM_RANDOM_EDGES = 8
@@ -184,7 +187,7 @@ def crossover_helper(parent1,parent2,point):
 
     return parent1,parent2 #offpsrings
 
-def  crossover(parent1, parent2, point, network_data):
+def crossover(parent1, parent2, point, network_data):
         offspring1 = tuple(parent1)
         offspring2 = tuple(parent2)
         #check for whether the offsprings are in the graph, 
@@ -196,8 +199,8 @@ def  crossover(parent1, parent2, point, network_data):
                 generated_offsprings.append(offspring1)
                 generated_offsprings.append(offspring2)
                 
-        print("tracking the offspring list", generated_offsprings)
         return offspring1, offspring2
+
 
 # Finds unneeded edges from a population.
 def refinePopulation(pop_data, n_data, c_nodes, h_nodes):
@@ -207,6 +210,7 @@ def refinePopulation(pop_data, n_data, c_nodes, h_nodes):
     if complete:
         # In a complete population, non-highlighted nodes should either have 0 or 2 edges connected.
         # If it has one edge connected, remove it from the generation.
+        
         for n in range(NUM_NODES):
             edges_connected = 0
             for edge in pop_data:
@@ -228,6 +232,7 @@ def refinePopulation(pop_data, n_data, c_nodes, h_nodes):
                     removal_buffer.append(pop_data[i])
         
     return removal_buffer
+
 
 # Determine if a given population is complete.
 # Pre: population is generated.
@@ -256,15 +261,19 @@ def next_gen(val):
     plt.gcf().canvas.stop_event_loop()
 
 
-def plot_graph():
+# Plot a graph of the current generation, given and index and path cost to display.
+def plot_graph(index, cost):
     global g, ax
     # Plot graph in matplotlib
-    fig, ax = plt.subplots(figsize=(5,5))
-    axes = plt.axes([0.6, 0.001, 0.3, 0.075])
-    bnext = Button(axes, 'Next Generation', color='yellow')
-    bnext.on_clicked(next_gen)
+    fig, ax = plt.subplots(figsize=(5,5), num='Generation '+str(index))
+    if index < NUM_GENERATIONS:
+        axes = plt.axes([0.6, 0.001, 0.3, 0.075])
+        bnext = Button(axes, 'Next Generation', color='yellow')
+        bnext.on_clicked(next_gen)
+    plt.text(-1.5, 0.4, 'Population Cost: '+str(cost), fontsize=11)
     ig.plot(
         g,
+        name = 'Generation ' + str(index),
         target = ax,
         vertex_size=0.25,
         vertex_color=["steelblue" if node_highlighted else "salmon" for node_highlighted in g.vs["nodes"]],
@@ -276,6 +285,7 @@ def plot_graph():
         edge_color=["#7142cf" if edge_traversed else "#AAA" for edge_traversed in g.es["population"]]
     )
     plt.show()
+
 
 def main():
     # Get user inputted values for connected nodes:
@@ -322,9 +332,8 @@ def main():
     g.es["connections"] = network_data
     population = random_population()
 
-    #TESTING FOR WHETHER THE BFS ALGORITHM CAN FIND THE SHORTEST DISTANCE GIVEN TWO NDOES
-    #test the number of edges between two nodes
-    # first get adjacency list of graph using network data
+    # Test the number of edges between two nodes
+    # First get adjacency list of graph using network data
     edges_adjacency_list = [[] for i in range(19)]
     for a, b in network_data:
         addEdges(edges_adjacency_list, a, b)
@@ -334,12 +343,16 @@ def main():
     g.es["population"] = population
 
     # Begin genetic algorithm
-    find_next_generation = True
     offspring_buffer = []
-    while find_next_generation:
+    current_generation_index = 1
+    for current_generation_index in range(0,NUM_GENERATIONS-1):
         
+        # Get total path costs of current generation
+        current_cost = len(pop_data)
+
         # Plot graph in matplotlib
-        plot_graph()
+        print('Created generation ', current_generation_index+1)
+        plot_graph(current_generation_index+1, current_cost)
 
         # Perform selection
         population_probabilities = get_probabilities(pop_data, edges_adjacency_list, connecting_nodes) #probabilities of selection
@@ -348,7 +361,6 @@ def main():
         parent2 = parents[1]
         
         # Create 2 offspring through crossover
-
         point = random.randint(1,len(parent1))  #Crossover point
         offspring1, offspring2 = crossover(parent1,parent2, point, network_data)
 
@@ -361,7 +373,6 @@ def main():
             MUTATION_RATE += 0.05 * duplicate_count
         offspring_buffer.append(offspring1)
         offspring_buffer.append(offspring2)
-
 
         # Random chance of mutating an offspring
         if random.random() < MUTATION_RATE:
@@ -379,12 +390,10 @@ def main():
         # Find unneeded edges in the current population.
         # If the population is complete and there are no unneeded edges, we can stop generating new populations.
         removal_buffer = refinePopulation(pop_data, network_data, connecting_nodes, highlighted_nodes)
-        if isComplete(pop_data, connecting_nodes) and len(removal_buffer) == 0:
-            find_next_generation = False
         
         # Remove all unfit edges
         for edge in removal_buffer:
-            print('removed edge')
+            print('Removed an edge: ', edge)
             pop_data.remove(edge)
         removal_buffer.clear()
 
@@ -401,9 +410,12 @@ def main():
                 if sorted(network_data[i]) == sorted(edge):
                     population[i] = True
         g.es["population"] = population
+        current_generation_index += 1
 
     # Plot solution of final generation
-    plot_graph()
+    print('Finished')
+    current_cost = len(pop_data)
+    plot_graph(NUM_GENERATIONS, current_cost)
 
 if __name__ == "__main__":
     main()
