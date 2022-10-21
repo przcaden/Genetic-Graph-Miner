@@ -8,11 +8,14 @@
 ############################################################################################
 
 
+from unicodedata import name
 import igraph as ig
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
 import random
 import queue
+
+from numpy import minimum
 
 # Define algorithm constants
 NUM_RANDOM_EDGES = 8
@@ -184,7 +187,7 @@ def crossover_helper(parent1,parent2,point):
 
     return parent1,parent2 #offpsrings
 
-def  crossover(parent1, parent2, point, network_data):
+def crossover(parent1, parent2, point, network_data):
         offspring1 = tuple(parent1)
         offspring2 = tuple(parent2)
         #check for whether the offsprings are in the graph, 
@@ -199,6 +202,7 @@ def  crossover(parent1, parent2, point, network_data):
         print("tracking the offspring list", generated_offsprings)
         return offspring1, offspring2
 
+
 # Finds unneeded edges from a population.
 def refinePopulation(pop_data, n_data, c_nodes, h_nodes):
     complete = isComplete(pop_data, c_nodes)
@@ -207,6 +211,7 @@ def refinePopulation(pop_data, n_data, c_nodes, h_nodes):
     if complete:
         # In a complete population, non-highlighted nodes should either have 0 or 2 edges connected.
         # If it has one edge connected, remove it from the generation.
+        
         for n in range(NUM_NODES):
             edges_connected = 0
             for edge in pop_data:
@@ -256,15 +261,18 @@ def next_gen(val):
     plt.gcf().canvas.stop_event_loop()
 
 
-def plot_graph():
+def plot_graph(index, cost):
     global g, ax
     # Plot graph in matplotlib
-    fig, ax = plt.subplots(figsize=(5,5))
-    axes = plt.axes([0.6, 0.001, 0.3, 0.075])
-    bnext = Button(axes, 'Next Generation', color='yellow')
-    bnext.on_clicked(next_gen)
+    fig, ax = plt.subplots(figsize=(5,5), num='Generation '+str(index))
+    if index < NUM_GENERATIONS:
+        axes = plt.axes([0.6, 0.001, 0.3, 0.075])
+        bnext = Button(axes, 'Next Generation', color='yellow')
+        bnext.on_clicked(next_gen)
+    plt.text(-1.5, 0.4, 'Population Cost: '+str(cost), fontsize=11)
     ig.plot(
         g,
+        name = 'Generation ' + str(index),
         target = ax,
         vertex_size=0.25,
         vertex_color=["steelblue" if node_highlighted else "salmon" for node_highlighted in g.vs["nodes"]],
@@ -336,10 +344,13 @@ def main():
     # Begin genetic algorithm
     find_next_generation = True
     offspring_buffer = []
-    while find_next_generation:
+    current_generation_index = 1
+    for current_generation_index in range(0,NUM_GENERATIONS-1):
         
+        current_cost = len(pop_data)
+
         # Plot graph in matplotlib
-        plot_graph()
+        plot_graph(current_generation_index+1, current_cost)
 
         # Perform selection
         population_probabilities = get_probabilities(pop_data, edges_adjacency_list, connecting_nodes) #probabilities of selection
@@ -401,9 +412,12 @@ def main():
                 if sorted(network_data[i]) == sorted(edge):
                     population[i] = True
         g.es["population"] = population
+        current_generation_index += 1
 
     # Plot solution of final generation
-    plot_graph()
+    print('Finished')
+    current_cost = len(pop_data)
+    plot_graph(NUM_GENERATIONS, current_cost)
 
 if __name__ == "__main__":
     main()
