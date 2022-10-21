@@ -342,7 +342,6 @@ def main():
     g.es["population"] = population
 
     # Begin genetic algorithm
-    find_next_generation = True
     offspring_buffer = []
     current_generation_index = 1
     for current_generation_index in range(0,NUM_GENERATIONS-1):
@@ -390,8 +389,6 @@ def main():
         # Find unneeded edges in the current population.
         # If the population is complete and there are no unneeded edges, we can stop generating new populations.
         removal_buffer = refinePopulation(pop_data, network_data, connecting_nodes, highlighted_nodes)
-        if isComplete(pop_data, connecting_nodes) and len(removal_buffer) == 0:
-            find_next_generation = False
         
         # Remove all unfit edges
         for edge in removal_buffer:
