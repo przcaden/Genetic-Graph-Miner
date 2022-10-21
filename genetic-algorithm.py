@@ -199,7 +199,6 @@ def crossover(parent1, parent2, point, network_data):
                 generated_offsprings.append(offspring1)
                 generated_offsprings.append(offspring2)
                 
-        print("tracking the offspring list", generated_offsprings)
         return offspring1, offspring2
 
 
@@ -234,6 +233,7 @@ def refinePopulation(pop_data, n_data, c_nodes, h_nodes):
         
     return removal_buffer
 
+
 # Determine if a given population is complete.
 # Pre: population is generated.
 # Post: a boolean value is determined, corresponding to if all highlighted nodes are accessed.
@@ -261,6 +261,7 @@ def next_gen(val):
     plt.gcf().canvas.stop_event_loop()
 
 
+# Plot a graph of the current generation, given and index and path cost to display.
 def plot_graph(index, cost):
     global g, ax
     # Plot graph in matplotlib
@@ -284,6 +285,7 @@ def plot_graph(index, cost):
         edge_color=["#7142cf" if edge_traversed else "#AAA" for edge_traversed in g.es["population"]]
     )
     plt.show()
+
 
 def main():
     # Get user inputted values for connected nodes:
@@ -330,9 +332,8 @@ def main():
     g.es["connections"] = network_data
     population = random_population()
 
-    #TESTING FOR WHETHER THE BFS ALGORITHM CAN FIND THE SHORTEST DISTANCE GIVEN TWO NDOES
-    #test the number of edges between two nodes
-    # first get adjacency list of graph using network data
+    # Test the number of edges between two nodes
+    # First get adjacency list of graph using network data
     edges_adjacency_list = [[] for i in range(19)]
     for a, b in network_data:
         addEdges(edges_adjacency_list, a, b)
@@ -346,9 +347,11 @@ def main():
     current_generation_index = 1
     for current_generation_index in range(0,NUM_GENERATIONS-1):
         
+        # Get total path costs of current generation
         current_cost = len(pop_data)
 
         # Plot graph in matplotlib
+        print('Created generation ', current_generation_index+1)
         plot_graph(current_generation_index+1, current_cost)
 
         # Perform selection
@@ -358,7 +361,6 @@ def main():
         parent2 = parents[1]
         
         # Create 2 offspring through crossover
-
         point = random.randint(1,len(parent1))  #Crossover point
         offspring1, offspring2 = crossover(parent1,parent2, point, network_data)
 
@@ -371,7 +373,6 @@ def main():
             MUTATION_RATE += 0.05 * duplicate_count
         offspring_buffer.append(offspring1)
         offspring_buffer.append(offspring2)
-
 
         # Random chance of mutating an offspring
         if random.random() < MUTATION_RATE:
@@ -392,7 +393,7 @@ def main():
         
         # Remove all unfit edges
         for edge in removal_buffer:
-            print('removed edge')
+            print('Removed an edge: ', edge)
             pop_data.remove(edge)
         removal_buffer.clear()
 
