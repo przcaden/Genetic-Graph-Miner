@@ -186,14 +186,11 @@ def crossover_helper(a, b, x):
     #where the swapping happens
     new_a = (np.append(a[:x], b[x:]).astype(int))
     new_b = (np.append(b[:x], a[x:]).astype(int))
-
-    print("new a", new_a)
+    
     #convert the arrays to lists
     offspring1 = new_a.tolist()
     offspring2 = new_b.tolist()
-    print("offspring1:", offspring1)
     
-
     #return new offpsrings  
     return offspring1, offspring2
 
@@ -212,7 +209,6 @@ def crossover( a, b, x):
 def crossover_point(a, b):
     crossover_points = [] #initialize array that will keep track of the two crossover points
     common_elements = list(set(a) & (set(b)))
-    print("common elements", common_elements)
 
     if len(common_elements) >= 1:
         #use the element as a crossover point. 
@@ -229,28 +225,6 @@ def crossover_point(a, b):
 
     print("crossover points", crossover_points)
     return crossover_points
-
-   
-# def crossover_helper(parent1,parent2,point):
-#     for i in range(point,len(parent1)):
-#         parent1[i],parent2[i] = parent2[i],parent1[i]  #swap the genetic information
-
-#     return parent1,parent2 #offpsrings
-
-# def crossover(parent1, parent2, point, network_data):
-#         offspring1 = tuple(parent1)
-#         offspring2 = tuple(parent2)
-#         #check for whether the offsprings are in the graph, 
-#         # only select them if they're part of the graph, if not we have to do another crossover and get new offsprings.
-#         while (offspring1 or offspring2) not in generated_offsprings:
-#             if (offspring1 not in network_data) or (offspring2 not in network_data):
-#                 crossover_helper(parent1, parent2, point) #do another crossover until we get offsprings that are in the map
-#             else:
-#                 generated_offsprings.append(offspring1)
-#                 generated_offsprings.append(offspring2)
-                
-#         return offspring1, offspring2
-
 
 # Finds unneeded edges from a population.
 def refinePopulation(pop_data, n_data, c_nodes, h_nodes):
