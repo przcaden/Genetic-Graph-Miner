@@ -19,7 +19,7 @@ import copy
 
 # Define algorithm constants
 NUM_RANDOM_EDGES = 8
-NUM_GENERATIONS = 20
+NUM_GENERATIONS = 50
 NUM_NODES = 19
 NUM_EDGES = 37
 # have a list to track the offsprings
@@ -186,7 +186,7 @@ def crossover_helper(a, b, x):
     #where the swapping happens
     new_a = (np.append(a[:x], b[x:]).astype(int))
     new_b = (np.append(b[:x], a[x:]).astype(int))
-    
+
     #convert the arrays to lists
     offspring1 = new_a.tolist()
     offspring2 = new_b.tolist()
