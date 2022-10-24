@@ -8,13 +8,13 @@
 ############################################################################################
 
 
+from enum import unique
 import igraph as ig
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
 import random
 import queue
 import numpy as np
-import copy
 
 
 # Define algorithm constants
@@ -22,8 +22,6 @@ NUM_RANDOM_EDGES = 8
 NUM_GENERATIONS = 20
 NUM_NODES = 19
 NUM_EDGES = 37
-# have a list to track the offsprings
-generated_offsprings = []
 
 
 # Get respective network data for all edges within a given population.
@@ -50,23 +48,22 @@ def random_population():
     return new_path
 
 
-# function to add edges to an adjacency list (wil help creating an adjacency list for the graph)
+# Function to add edges to an adjacency list (will help creating an adjacency list for the graph).
 def addEdges(edges, x, y):
     edges[x].append(y)
     edges[y].append(x)
 
- #function for finding minimum number of edges between any two nodes in the graph
 
+ # Function for finding the minimum number of edges between any two nodes in the graph.
 def minimumEdgesBFS(edges, u, v):
      
-    # visited[n] for keeping track
-    # of visited node in BFS
+    # visited[n] for keeping track of visited node in BFS
     visited = [0] * NUM_NODES
  
     # Initialize distances as 0
     distance = [0] * NUM_NODES
  
-    # queue to do BFS.
+    # Queue to do BFS
     Q = queue.Queue()
     distance[u] = 0
  
@@ -174,7 +171,6 @@ def selection(pop_data, probabilities):
             if r <= probabilities[i]:
                 selected_parents.append(list(individual))
                 break
-    print("parents", selected_parents)
     return selected_parents
 
 
@@ -187,32 +183,28 @@ def crossover_helper(a, b, x):
     new_a = (np.append(a[:x], b[x:]).astype(int))
     new_b = (np.append(b[:x], a[x:]).astype(int))
 
-    print("new a", new_a)
     #convert the arrays to lists
     offspring1 = new_a.tolist()
     offspring2 = new_b.tolist()
-    print("offspring1:", offspring1)
-    
 
     #return new offpsrings  
     return offspring1, offspring2
 
-#two point crossover,
-#uses two random points to act as crossover points
-#makes sure that the points are part of the map
+# Two point crossover, uses two random points to act as crossover points.
+# Makes sure that the points are part of the map.
 def crossover( a, b, x):
     for i in x:
         offspring1, offspring2 = crossover_helper(a,b,i)
 
     return offspring1, offspring2
 
-#function to help get crossover point
-# you have to insure that when the two routes cross over that the resulting routes produce a valid route
-# which means that crossover points have to be at the same position value on the map
+# Function to help get crossover point.
+# Must ensure that when the two routes cross over, the resulting routes produce a valid route
+# which means that crossover points have to be at the same position value on the map.
 def crossover_point(a, b):
     crossover_points = [] #initialize array that will keep track of the two crossover points
     common_elements = list(set(a) & (set(b)))
-    print("common elements", common_elements)
+    print("Common elements: ", common_elements)
 
     if len(common_elements) >= 1:
         #use the element as a crossover point. 
@@ -227,29 +219,8 @@ def crossover_point(a, b):
     crossover_points.append(cut_a)
     crossover_points.append(cut_b)
 
-    print("crossover points", crossover_points)
+    print("Crossover points: ", crossover_points)
     return crossover_points
-
-   
-# def crossover_helper(parent1,parent2,point):
-#     for i in range(point,len(parent1)):
-#         parent1[i],parent2[i] = parent2[i],parent1[i]  #swap the genetic information
-
-#     return parent1,parent2 #offpsrings
-
-# def crossover(parent1, parent2, point, network_data):
-#         offspring1 = tuple(parent1)
-#         offspring2 = tuple(parent2)
-#         #check for whether the offsprings are in the graph, 
-#         # only select them if they're part of the graph, if not we have to do another crossover and get new offsprings.
-#         while (offspring1 or offspring2) not in generated_offsprings:
-#             if (offspring1 not in network_data) or (offspring2 not in network_data):
-#                 crossover_helper(parent1, parent2, point) #do another crossover until we get offsprings that are in the map
-#             else:
-#                 generated_offsprings.append(offspring1)
-#                 generated_offsprings.append(offspring2)
-                
-#         return offspring1, offspring2
 
 
 # Finds unneeded edges from a population.
@@ -398,15 +369,19 @@ def main():
     for current_generation_index in range(0,NUM_GENERATIONS-1):
         
         # Get total path costs of current generation
-        current_cost = len(pop_data)
+        unique_edges = []
+        for edge in pop_data:
+            if edge not in unique_edges and edge in network_data:
+                unique_edges.append(edge)
+        current_cost = len(unique_edges)
 
         # Plot graph in matplotlib
         print('Created generation ', current_generation_index+1)
         plot_graph(current_generation_index+1, current_cost)
 
         # Perform selection
-        population_probabilities = get_probabilities(pop_data, edges_adjacency_list, connecting_nodes) #probabilities of selection
-        parents = selection(pop_data, population_probabilities) #selection
+        population_probabilities = get_probabilities(pop_data, edges_adjacency_list, connecting_nodes) # probabilities of selection
+        parents = selection(pop_data, population_probabilities) # perform selection
         parent1 = parents[0]
         parent2 = parents[1]
         
